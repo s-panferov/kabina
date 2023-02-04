@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "kabina": "./src/index.d.ts" 
+  }
+}
