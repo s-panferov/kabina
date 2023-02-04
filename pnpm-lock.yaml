@@ -10,6 +10,12 @@ importers:
       kabina: link:../../packages/kabina-ts
       typescript: 4.9.5
 
+  packages/kabina-rt:
+    specifiers:
+      kabina: workspace
+    devDependencies:
+      kabina: link:../kabina-ts
+
   packages/kabina-ts:
     specifiers:
       typescript: ^4.9.5

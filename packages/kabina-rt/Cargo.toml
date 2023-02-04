@@ -9,4 +9,6 @@ deno_core="*"
 deno_ast={version = "*", features = ["transpiling"] }
 anyhow="*"
 futures="*"
+serde="*"
+tracing="*"
 tokio={version="*", features=["full"]}

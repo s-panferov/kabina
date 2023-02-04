@@ -1,3 +1,4 @@
 packages:
   - "packages/kabina-ts"
+  - "packages/kabina-rt"
   - "examples/build"

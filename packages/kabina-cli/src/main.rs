@@ -15,6 +15,8 @@ enum Command {
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Command::parse();
 
+    tracing_subscriber::fmt::init();
+
     match args {
         Command::Build { mut schema } => {
             let rt = tokio::runtime::Builder::new_multi_thread()

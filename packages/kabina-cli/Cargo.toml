@@ -8,3 +8,4 @@ version = "0.0.4"
 clap= { version="*", features=["derive"] }
 kabina-rt={ path = "../kabina-rt" }
 tokio={version="*", features=["full"]}
+tracing-subscriber="*"

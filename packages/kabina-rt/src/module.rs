@@ -1,4 +1,5 @@
 use std::pin::Pin;
+use std::str::FromStr;
 
 use anyhow::anyhow;
 use anyhow::bail;
@@ -16,6 +17,9 @@ use deno_core::ResolutionKind;
 use futures::FutureExt;
 pub struct KabinaModuleLoader;
 
+const RUNTIME_URL: &'static str = "kabina:///runtime.ts";
+const RUNTIME: &'static str = include_str!("../runtime.ts");
+
 impl ModuleLoader for KabinaModuleLoader {
     fn resolve(
         &self,
@@ -23,6 +27,11 @@ impl ModuleLoader for KabinaModuleLoader {
         referrer: &str,
         _kind: ResolutionKind,
     ) -> Result<ModuleSpecifier, Error> {
+        match specifier {
+            "kabina" => return Ok(ModuleSpecifier::from_str(RUNTIME_URL).unwrap()),
+            _ => {}
+        }
+
         Ok(resolve_import(specifier, referrer)?)
     }
 
@@ -33,6 +42,7 @@ impl ModuleLoader for KabinaModuleLoader {
         _is_dyn_import: bool,
     ) -> Pin<Box<ModuleSourceFuture>> {
         let module_specifier = module_specifier.clone();
+
         async move {
             let path = module_specifier
                 .to_file_path()
@@ -55,7 +65,12 @@ impl ModuleLoader for KabinaModuleLoader {
                 _ => bail!("Unknown extension {:?}", path.extension()),
             };
 
-            let code = std::fs::read_to_string(&path)?;
+            let code = if module_specifier.as_str() == RUNTIME_URL {
+                RUNTIME.to_owned()
+            } else {
+                tokio::fs::read_to_string(&path).await?
+            };
+
             let code = if should_transpile {
                 let parsed = deno_ast::parse_module(ParseParams {
                     specifier: module_specifier.to_string(),
@@ -69,12 +84,14 @@ impl ModuleLoader for KabinaModuleLoader {
             } else {
                 code
             };
+
             let module = ModuleSource {
                 code: code.into_bytes().into_boxed_slice(),
                 module_type,
                 module_url_specified: module_specifier.to_string(),
                 module_url_found: module_specifier.to_string(),
             };
+
             Ok(module)
         }
         .boxed_local()
