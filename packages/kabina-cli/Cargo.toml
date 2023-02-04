@@ -1,0 +1,10 @@
+[package]
+authors = ["Stanislav Panferov <stanislav@panferov.dev>"]
+edition = "2021"
+name = "kabina-cli"
+version = "0.0.4"
+
+[dependencies]
+clap= { version="*", features=["derive"] }
+kabina-rt={ path = "../kabina-rt" }
+tokio={version="*", features=["full"]}

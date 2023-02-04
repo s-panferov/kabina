@@ -1,0 +1,18 @@
+[workspace]
+members = [
+  "packages/kabina-cli",
+  "packages/kabina-rt",
+  "packages/kabina-ui"
+]
+
+resolver = "2"
+
+[profile.dev]
+split-debuginfo = "unpacked"
+
+[profile.release]
+# lto = true
+
+[profile.bench]
+# lto = true
+debug = true

@@ -1,0 +1,12 @@
+[package]
+authors = ["Stanislav Panferov <stanislav@panferov.dev>"]
+edition = "2021"
+name = "kabina-rt"
+version = "0.0.4"
+
+[dependencies]
+deno_core="*"
+deno_ast={version = "*", features = ["transpiling"] }
+anyhow="*"
+futures="*"
+tokio={version="*", features=["full"]}
