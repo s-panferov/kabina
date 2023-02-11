@@ -7,9 +7,10 @@ use std::{
 };
 
 use by_address::ByAddress;
+use downcast_rs::DowncastSync;
 use globset::{Candidate, GlobSet};
 
-use crate::Schema;
+use crate::{Database, Schema};
 
 use super::db::Db;
 
@@ -29,10 +30,10 @@ pub struct FileGroupItem {
 #[derive(Debug)]
 pub struct FileGroup {
     #[id]
-    name: String,
-    root: PathBuf,
+    pub name: String,
+    pub root: PathBuf,
     #[return_ref]
-    items: Vec<FileGroupItem>,
+    pub items: Vec<FileGroupItem>,
 }
 
 #[derive(Default, Debug, PartialEq, Eq)]
@@ -145,8 +146,65 @@ pub fn root_file_groups(
     root.clone()
 }
 
+pub trait Executable: DowncastSync {}
+downcast_rs::impl_downcast!(sync Executable);
+
+#[salsa::accumulator]
+pub struct RuntimeTask(Arc<dyn Executable>);
+
+pub struct ResolveRootFiles {
+    pub schema: Schema,
+    pub root: PathBuf,
+    pub matchers: BTreeMap<FileGroup, ByAddress<Arc<GlobSet>>>,
+}
+
+impl Executable for ResolveRootFiles {}
+
+impl ResolveRootFiles {
+    pub fn resolve(&self, db: &mut Database) {
+        let mut results: BTreeMap<FileGroup, Vec<PathBuf>> = BTreeMap::new();
+        for _entry in walkdir::WalkDir::new(&self.root)
+            .into_iter()
+            .filter_entry(|e| {
+                if e.file_type().is_dir() {
+                    // TODO: blacklist
+                    return true;
+                }
+
+                tracing::info!("Visiting {:?}", e.path());
+
+                let candidate = Candidate::new(e.path().strip_prefix(&self.root).unwrap());
+
+                for (group, matcher) in &self.matchers {
+                    if !matcher.matches_candidate(&candidate).is_empty() {
+                        tracing::info!("Matched group {:?}", group);
+                        results
+                            .entry(*group)
+                            .or_insert_with(|| Vec::new())
+                            .push(e.path().to_owned())
+                    }
+                }
+
+                true
+            })
+            .filter_map(|e| Some(e))
+        {}
+
+        root_files::set(
+            db,
+            self.schema,
+            self.root.clone(),
+            PendingResult::Ok(results),
+        )
+    }
+}
+
 #[salsa::tracked]
-pub fn root_files(db: &dyn Db, schema: Schema, root: PathBuf) -> BTreeMap<FileGroup, Vec<PathBuf>> {
+pub fn root_files(
+    db: &dyn Db,
+    schema: Schema,
+    root: PathBuf,
+) -> PendingResult<BTreeMap<FileGroup, Vec<PathBuf>>> {
     let groups = root_file_groups(db, schema, root.clone());
 
     let matchers = groups
@@ -154,50 +212,41 @@ pub fn root_files(db: &dyn Db, schema: Schema, root: PathBuf) -> BTreeMap<FileGr
         .map(|(g, prefix)| (*g, file_group_matcher(db, *g, prefix.clone())))
         .collect::<BTreeMap<_, _>>();
 
-    let mut results: BTreeMap<FileGroup, Vec<PathBuf>> = BTreeMap::new();
+    let task = Arc::new(ResolveRootFiles {
+        root,
+        schema,
+        matchers,
+    });
 
-    for _entry in walkdir::WalkDir::new(&root)
-        .into_iter()
-        .filter_entry(|e| {
-            if e.file_type().is_dir() {
-                // TODO: blacklist
-                return true;
-            }
+    RuntimeTask::push(db, task.clone());
 
-            tracing::info!("Visiting {:?}", e.path());
-
-            let candidate = Candidate::new(e.path().strip_prefix(&root).unwrap());
-
-            for (group, matcher) in &matchers {
-                if !matcher.matches_candidate(&candidate).is_empty() {
-                    tracing::info!("Matched group {:?}", group);
-                    results
-                        .entry(*group)
-                        .or_insert_with(|| Vec::new())
-                        .push(e.path().to_owned())
-                }
-            }
-
-            true
-        })
-        .filter_map(|e| Some(e))
-    {}
-
-    results
+    PendingResult::Err(Pending)
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Pending;
+
+pub type PendingResult<T> = Result<T, Pending>;
+
 #[salsa::tracked]
-pub fn file_group_resolved_paths(db: &dyn Db, schema: Schema, group: FileGroup) -> Vec<PathBuf> {
+pub fn file_group_resolved_paths(
+    db: &dyn Db,
+    schema: Schema,
+    group: FileGroup,
+) -> PendingResult<Vec<PathBuf>> {
     let root = file_group_root(db, schema, group);
 
     tracing::info!("Gettings files for {:?}, root: {:?}", group, root);
-    let root = root_files(db, schema, root);
+    let root = root_files(db, schema, root)?;
 
     tracing::info!("Root files {:?}", root);
 
-    root.get(&group)
+    let paths = root
+        .get(&group)
         .cloned()
-        .expect("Root does not have this group")
+        .expect("Root does not have this group");
+
+    PendingResult::Ok(paths)
 }
 
 #[salsa::input]
@@ -218,12 +267,14 @@ pub fn file_modified_time_in_seconds(path: &Path) -> u64 {
 }
 
 #[salsa::tracked]
-pub fn file_group_files(db: &dyn Db, schema: Schema, group: FileGroup) -> Vec<File> {
-    file_group_resolved_paths(db, schema, group)
+pub fn file_group_files(db: &dyn Db, schema: Schema, group: FileGroup) -> PendingResult<Vec<File>> {
+    let files = file_group_resolved_paths(db, schema, group)?
         .into_iter()
         .map(|path| {
             let revision = file_modified_time_in_seconds(&path);
             File::new(db, path, revision)
         })
-        .collect()
+        .collect();
+
+    PendingResult::Ok(files)
 }

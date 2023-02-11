@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 #[salsa::jar(db = Db)]
 pub struct Jar(
@@ -6,6 +9,7 @@ pub struct Jar(
     FileGroup,
     Diagnostic,
     Schema,
+    fileset::RuntimeTask,
     transform::Transform,
     transform::transform_inputs,
     transform::transform_output,
@@ -27,7 +31,7 @@ pub use salsa::AsId;
 
 use crate::{
     fileset::{self, FileGroup},
-    transform, transform_output, Schema,
+    transform, Executable, Schema,
 };
 
 #[salsa::db(Jar)]
