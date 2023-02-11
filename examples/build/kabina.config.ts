@@ -1,12 +1,21 @@
 import { fileGroup } from 'kabina'
 // import { job, fileGroup, reportStatus } from 'kabina'
 
-export const files = fileGroup({
-  name: "sources",
-  files: [
-    { pattern: '' }
+fileGroup({
+  name: "css",
+  items: [
+    { pattern: 'src/css/**/*.css' }
   ]
 })
+
+fileGroup({
+  name: "js",
+  root: "src",
+  items: [
+    { pattern: '**/*.js' }
+  ]
+})
+
 
 // export const concat = job({
 //   name: "concat",

@@ -1,6 +1,7 @@
-use std::{error::Error, path::PathBuf};
+use std::{error::Error, path::PathBuf, sync::Arc};
 
 use clap::Parser;
+use kabina_db::roots;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -27,7 +28,19 @@ fn main() -> Result<(), Box<dyn Error>> {
                 schema = std::env::current_dir()?.join(schema)
             }
 
-            rt.block_on(kabina_rt::invoke(schema));
+            let db = Arc::new(kabina_db::Database::new());
+
+            // Populating the schema from TS
+            let schema = rt.block_on(kabina_rt::invoke(schema, db.clone()));
+
+            let groups = schema.file_groups(&*db);
+            for group in groups.iter() {
+                println!(
+                    "Files in {:?}: {:#?}",
+                    *group,
+                    kabina_db::file_group_files(&*db, schema, *group)
+                )
+            }
         }
     }
 

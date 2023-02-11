@@ -4,14 +4,10 @@ export interface FilePattern {
   version?: "time" | "hash"
 }
 
-export interface FileName {
-  path: string,
-  version?: "time" | "hash"
-}
-
 export interface FileGroupConfig {
-  name?: string
-  files: (string | FileName | FilePattern)[]
+  name: string,
+  root?: string,
+  items: (string | FilePattern)[]
 }
 
 export interface FileGroup extends Input {

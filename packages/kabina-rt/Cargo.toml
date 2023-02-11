@@ -12,3 +12,4 @@ futures="*"
 serde="*"
 tracing="*"
 tokio={version="*", features=["full"]}
+kabina-db={path="../kabina-db"}

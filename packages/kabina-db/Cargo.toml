@@ -1,0 +1,14 @@
+[package]
+authors = ["Stanislav Panferov <stanislav@panferov.dev>"]
+edition = "2021"
+name = "kabina-db"
+version = "0.0.1"
+
+[dependencies]
+salsa={git="https://github.com/salsa-rs/salsa", package="salsa-2022"}
+dashmap="*"
+globset="*"
+indexmap="*"
+walkdir="*"
+by_address="*"
+tracing="*"

@@ -2,7 +2,8 @@
 members = [
   "packages/kabina-cli",
   "packages/kabina-rt",
-  "packages/kabina-ui"
+  "packages/kabina-ui",
+  "packages/kabina-db"
 ]
 
 resolver = "2"
