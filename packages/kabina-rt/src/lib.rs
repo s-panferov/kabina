@@ -45,7 +45,7 @@ pub async fn invoke(schema_path: PathBuf, database: Arc<kabina_db::Database>) ->
         panic!("Arc cloned")
     };
 
-    Schema::new(&*database, builder.file_groups)
+    Schema::new(&*database, builder.file_groups, builder.transforms)
 
     // runtime.execute_script("<schema>", &schema).unwrap();
 }

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use deno_core::{op, OpState};
+use deno_core::{op, serde_json::Value, OpState};
 use kabina_db::{AsId, Database, DependencyKind, FileGroup, RunnerKind, SchemaBuilder, Transform};
 use serde::Deserialize;
 
@@ -16,8 +16,8 @@ pub struct JsTransform {
     name: String,
     module: deno_core::url::Url,
     runner: u64,
-    input: Vec<JsDependency>,
-    dependencies: Vec<JsDependency>,
+    input: Value,
+    dependencies: Value,
 }
 
 fn map_js_dep(dep: JsDependency) -> DependencyKind {
@@ -39,15 +39,12 @@ pub fn transform(state: &mut OpState, f: JsTransform) -> Result<f64, deno_core::
     let db = state.borrow::<Arc<Database>>();
     let schema = state.borrow::<Arc<SchemaBuilder>>();
 
-    let input = f.input.into_iter().map(map_js_dep).collect();
-    let dependencies = f.dependencies.into_iter().map(map_js_dep).collect();
-
     let handle = Transform::new(
         &**db,
         f.name,
         RunnerKind::JsFunction(f.runner),
-        input,
-        dependencies,
+        f.input,
+        f.dependencies,
     );
 
     schema.register_transform(handle);

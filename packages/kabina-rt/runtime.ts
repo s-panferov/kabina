@@ -1,4 +1,4 @@
-import type { fileGroup as FileGroupFunc, transform as TransformFunc, FileGroupConfig, TransformConfig, FileGroup, Transform } from 'kabina'
+import type { fileGroup as FileGroupFunc, transform as TransformFunc, FileGroupConfig, TransformConfig, FileGroup, Transform, MapLike } from 'kabina'
 
 declare interface Deno {
   core: {
@@ -49,24 +49,23 @@ export const fileGroup: typeof FileGroupFunc = (fileGroupConfig: FileGroupConfig
   }
 }
 
+// deno-lint-ignore no-explicit-any
 type Dependency = FileGroup | Transform<any>;
 
 interface TransformConfigRuntime {
   name: string,
   module: string | undefined,
   runner: number,
-  input: Dependency[]
-  deps: Dependency[]
+  // deno-lint-ignore no-explicit-any
+  input: any
+  // deno-lint-ignore no-explicit-any
+  dependencies: any
 }
 
 let runtimeFunctionsSeq = 0
+
+// deno-lint-ignore ban-types
 const runtimeFunctions = new Map<number, WeakRef<Function>>;
-
-function toArray<I>(array: I) {
-  if Array.isArray(array) {
-
-  }
-}
 
 export const transform: typeof TransformFunc = <I, D, O>(transformConfig: TransformConfig<I, D, O>) => {
   const runnerId = runtimeFunctionsSeq++;
@@ -77,7 +76,7 @@ export const transform: typeof TransformFunc = <I, D, O>(transformConfig: Transf
     name: transformConfig.name,
     module: caller(),
     input: transformConfig.input,
-    deps: transformConfig.deps,
+    dependencies: transformConfig.dependencies || null,
     runner: runnerId
   }
 

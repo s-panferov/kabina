@@ -49,7 +49,7 @@ export interface TransformConfig<I, D, O> {
   name: string,
   input: I,
   run: TransformRuner<I, D, O>
-  deps?: D
+  dependencies?: D
 }
 
 export interface Transform<O> {
@@ -57,9 +57,10 @@ export interface Transform<O> {
   id: number
 }
 
-export type MAP<T> = T | T[] | { [key: string]: T }
+export type ArrayLike<T> = T | T[]
+export type MapLike<T> = T | T[] | { [key: string]: T }
 
-export function transform<I extends MAP<Dependency>, D extends MAP<Dependency>, O>(transform: TransformConfig<I, D, O>): Transform<O>;
+export function transform<I extends ArrayLike<Dependency>, D extends MapLike<Dependency>, O>(transform: TransformConfig<I, D, O>): Transform<O>;
 
 export interface TransformBinaryRunner<I, D, O> {
   binary: (input: MapDependenciesToArguments<I>, dependencies: MapDependenciesToArguments<D>) => InvocationConfig<O>

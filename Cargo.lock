@@ -767,6 +767,7 @@ dependencies = [
  "globset",
  "indexmap",
  "salsa-2022",
+ "serde_json",
  "tracing",
  "walkdir",
 ]

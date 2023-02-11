@@ -34,6 +34,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let schema = rt.block_on(kabina_rt::invoke(schema, db.clone()));
 
             let groups = schema.file_groups(&*db);
+
             for group in groups.iter() {
                 println!(
                     "Files in {:?}: {:#?}",
@@ -42,6 +43,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .into_iter()
                         .map(|f| f.into_debug_all(&*db))
                         .collect::<Vec<_>>()
+                )
+            }
+
+            let transforms = schema.transforms(&*db);
+
+            for t in transforms.iter() {
+                println!(
+                    "Dependencies in {:?}: {:#?}",
+                    *t,
+                    kabina_db::transform_inputs(&*db, *t)
                 )
             }
         }

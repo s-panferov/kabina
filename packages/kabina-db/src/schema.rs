@@ -6,6 +6,8 @@ use crate::{FileGroup, Transform};
 pub struct Schema {
     #[return_ref]
     pub file_groups: DashSet<FileGroup>,
+    #[return_ref]
+    pub transforms: DashSet<Transform>,
 }
 
 #[derive(Default)]
