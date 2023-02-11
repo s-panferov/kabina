@@ -1,14 +1,13 @@
-import { fileGroup } from 'kabina'
-// import { job, fileGroup, reportStatus } from 'kabina'
+import { fileGroup, transform } from 'kabina'
 
-fileGroup({
+const cssFiles = fileGroup({
   name: "css",
   items: [
     { pattern: 'src/css/**/*.css' }
   ]
 })
 
-fileGroup({
+const jsFiles = fileGroup({
   name: "js",
   root: "src",
   items: [
@@ -16,6 +15,12 @@ fileGroup({
   ]
 })
 
+const tranform = transform({
+  name: "PostCSS",
+  input: cssFiles,
+  run: async (ctx) => {
+  }
+})
 
 // export const concat = job({
 //   name: "concat",

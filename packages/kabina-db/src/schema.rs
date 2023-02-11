@@ -1,6 +1,6 @@
 use dashmap::DashSet;
 
-use crate::FileGroup;
+use crate::{FileGroup, Transform};
 
 #[salsa::input]
 pub struct Schema {
@@ -11,10 +11,15 @@ pub struct Schema {
 #[derive(Default)]
 pub struct SchemaBuilder {
     pub file_groups: DashSet<FileGroup>,
+    pub transforms: DashSet<Transform>,
 }
 
 impl SchemaBuilder {
     pub fn register_file_group(&self, file_group: FileGroup) {
         self.file_groups.insert(file_group);
+    }
+
+    pub fn register_transform(&self, transform: Transform) {
+        self.transforms.insert(transform);
     }
 }

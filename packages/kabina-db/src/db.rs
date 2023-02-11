@@ -6,6 +6,7 @@ pub struct Jar(
     FileGroup,
     Diagnostic,
     Schema,
+    transform::Transform,
     fileset::File,
     fileset::roots,
     fileset::file_group_root,
@@ -23,7 +24,7 @@ pub use salsa::AsId;
 
 use crate::{
     fileset::{self, FileGroup},
-    Schema,
+    transform, Schema,
 };
 
 #[salsa::db(Jar)]

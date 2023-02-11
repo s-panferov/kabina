@@ -11,14 +11,13 @@ export interface FileGroupConfig {
 }
 
 export interface FileGroup extends Input {
-  __fileGroup: 'FileGroup'
+  kind: "FileGroup",
+  id: number
 }
 
 export function fileGroup(req: FileGroupConfig): FileGroup
 
-export interface Dependency {
-  __dependency?: "Dependency"
-}
+export type Dependency = FileGroup | Transform<any>;
 
 export interface Input {
   __input?: "Input"
@@ -30,7 +29,7 @@ export interface JobConfig<D, O> {
   deps?: D
 }
 
-export interface Job<O> extends Dependency {
+export interface Job<O> {
   __job: 'Job'
 }
 
@@ -46,8 +45,32 @@ export interface Job<O> extends Dependency {
 
 export function job<O, D = []>(req: JobConfig<D, O>): Job<O>
 
-export type MapDependenciesToArguments<D> = D extends [...infer T] ?
-  { [P in keyof T]: MapDependencyToArgument<T[P]> } : never;
+export interface TransformConfig<I, D, O> {
+  name: string,
+  input: I,
+  run: TransformRuner<I, D, O>
+  deps?: D
+}
+
+export interface Transform<O> {
+  kind: 'Transform',
+  id: number
+}
+
+export type MAP<T> = T | T[] | { [key: string]: T }
+
+export function transform<I extends MAP<Dependency>, D extends MAP<Dependency>, O>(transform: TransformConfig<I, D, O>): Transform<O>;
+
+export interface TransformBinaryRunner<I, D, O> {
+  binary: (input: MapDependenciesToArguments<I>, dependencies: MapDependenciesToArguments<D>) => InvocationConfig<O>
+}
+
+export type TransformRuner<I, D, O> = (input: MapDependenciesToArguments<I>, dependencies: MapDependenciesToArguments<D>) => O;
+
+export type MapDependenciesToArguments<D> =
+  D extends [...infer T] ? { [P in keyof T]: MapDependencyToArgument<T[P]> } :
+  D extends FileGroup ? MapDependencyToArgument<D> :
+  never;
 
 export interface FileMetadata {
   fileName: string
@@ -62,13 +85,11 @@ export type MapDependencyToArgument<D> =
   D extends Job<infer O> ? MapDependencyToArgument<O> :
   never;
 
-export interface FunctionRunner<D, O> {
+export interface JobFunctionRunner<D, O> {
   func: (input: MapDependenciesToArguments<D>) => O;
 }
 
-export type FunctionOutput = string | number | File
-
-export interface BinaryRunner<D, O> {
+export interface JobBinaryRunner<D, O> {
   binary: (dependencies: MapDependenciesToArguments<D>) => InvocationConfig<O>
 }
 
@@ -76,7 +97,7 @@ export interface InvocationConfig<O> extends ExternalProcessConfig {
 
 }
 
-export type JobRuner<D, O> = FunctionRunner<D, O> | BinaryRunner<D, O>;
+export type JobRuner<D, O> = JobFunctionRunner<D, O> | JobBinaryRunner<D, O>;
 
 export interface File {
   __file: "File"
