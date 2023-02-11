@@ -3,25 +3,22 @@ use std::path::PathBuf;
 #[salsa::jar(db = Db)]
 pub struct Jar(
     Project,
-    File,
     FileGroup,
     Diagnostic,
     Schema,
+    fileset::File,
     fileset::roots,
     fileset::file_group_root,
     fileset::file_group_matcher,
     fileset::root_files,
     fileset::root_file_groups,
+    fileset::file_group_resolved_paths,
     fileset::file_group_files,
 );
 
-#[salsa::input]
-pub struct File {
-    path: PathBuf,
-}
-
 pub trait Db: salsa::DbWithJar<Jar> {}
 
+pub use salsa::debug::DebugWithDb;
 pub use salsa::AsId;
 
 use crate::{

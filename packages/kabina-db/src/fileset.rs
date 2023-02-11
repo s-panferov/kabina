@@ -1,8 +1,9 @@
 use std::{
     borrow::Cow,
-    collections::{BTreeMap, BTreeSet},
-    path::PathBuf,
+    collections::BTreeMap,
+    path::{Path, PathBuf},
     sync::Arc,
+    time::UNIX_EPOCH,
 };
 
 use by_address::ByAddress;
@@ -186,7 +187,7 @@ pub fn root_files(db: &dyn Db, schema: Schema, root: PathBuf) -> BTreeMap<FileGr
 }
 
 #[salsa::tracked]
-pub fn file_group_files(db: &dyn Db, schema: Schema, group: FileGroup) -> Vec<PathBuf> {
+pub fn file_group_resolved_paths(db: &dyn Db, schema: Schema, group: FileGroup) -> Vec<PathBuf> {
     let root = file_group_root(db, schema, group);
 
     tracing::info!("Gettings files for {:?}, root: {:?}", group, root);
@@ -197,4 +198,32 @@ pub fn file_group_files(db: &dyn Db, schema: Schema, group: FileGroup) -> Vec<Pa
     root.get(&group)
         .cloned()
         .expect("Root does not have this group")
+}
+
+#[salsa::input]
+pub struct File {
+    #[salsa::id]
+    path: PathBuf,
+    revision: u64,
+}
+
+pub fn file_modified_time_in_seconds(path: &Path) -> u64 {
+    std::fs::metadata(path)
+        .unwrap()
+        .modified()
+        .unwrap()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+}
+
+#[salsa::tracked]
+pub fn file_group_files(db: &dyn Db, schema: Schema, group: FileGroup) -> Vec<File> {
+    file_group_resolved_paths(db, schema, group)
+        .into_iter()
+        .map(|path| {
+            let revision = file_modified_time_in_seconds(&path);
+            File::new(db, path, revision)
+        })
+        .collect()
 }

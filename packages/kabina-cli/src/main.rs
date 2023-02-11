@@ -1,7 +1,7 @@
 use std::{error::Error, path::PathBuf, sync::Arc};
 
 use clap::Parser;
-use kabina_db::roots;
+use kabina_db::DebugWithDb;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -39,6 +39,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     "Files in {:?}: {:#?}",
                     *group,
                     kabina_db::file_group_files(&*db, schema, *group)
+                        .into_iter()
+                        .map(|f| f.into_debug_all(&*db))
+                        .collect::<Vec<_>>()
                 )
             }
         }
