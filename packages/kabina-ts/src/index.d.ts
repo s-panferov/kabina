@@ -106,10 +106,6 @@ export interface File {
 
 export function write(path: string, content: string): File
 
-export interface LogLine {
-
-}
-
 export function reportStatus(status: 'ready' | 'building' | 'failed'): void;
 
 export interface ExternalProcessConfig {
@@ -117,7 +113,32 @@ export interface ExternalProcessConfig {
   arguments?: string[],
   env?: { [key: string]: string | undefined },
   processLogs?: {
-    stdout?: (line: LogLine) => void;
+    stdout?: (line: any) => void;
   }
 }
 
+export interface RouteConfig {
+
+}
+
+export interface BundleConfig {
+  name: "Application"
+  items: [{ prefix: string, content: Dependency }]
+}
+
+export interface Bundle {
+  kind: 'Bundle'
+}
+
+export function bundle(config: BundleConfig): Bundle;
+
+export interface ServerConfig {
+  name: string
+  routes: { [key: string]: RouteConfig }
+}
+
+export interface Server {
+  kind: 'Server'
+}
+
+export function server(config: ServerConfig): Server;

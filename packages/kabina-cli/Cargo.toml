@@ -5,8 +5,8 @@ name = "kabina-cli"
 version = "0.0.4"
 
 [dependencies]
-clap= { version="*", features=["derive"] }
+clap= { version = "4.1.4", features = ["derive"] }
 kabina-rt={ path = "../kabina-rt" }
 kabina-db={ path = "../kabina-db" }
-tokio={version="*", features=["full"]}
-tracing-subscriber="*"
+tokio={ version = "1.25.0", features = ["full"] }
+tracing-subscriber= "0.3.16"

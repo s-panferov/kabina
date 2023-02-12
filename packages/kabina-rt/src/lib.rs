@@ -9,14 +9,18 @@ use kabina_db::Schema;
 use kabina_db::SchemaBuilder;
 use module::KabinaModuleLoader;
 
+mod bundle;
 mod fileset;
 mod module;
+mod server;
 mod transform;
 
 pub async fn invoke(schema_path: PathBuf, database: Arc<kabina_db::Database>) -> Schema {
     let ext = Extension::builder("runtime")
         .ops(vec![fileset::file_group::decl()])
         .ops(vec![transform::transform::decl()])
+        .ops(vec![bundle::bundle::decl()])
+        .ops(vec![server::server::decl()])
         .build();
 
     // Initialize a runtime instance
@@ -45,7 +49,13 @@ pub async fn invoke(schema_path: PathBuf, database: Arc<kabina_db::Database>) ->
         panic!("Arc cloned")
     };
 
-    Schema::new(&*database, builder.file_groups, builder.transforms)
+    Schema::new(
+        &*database,
+        builder.file_groups,
+        builder.transforms,
+        builder.bundles,
+        builder.servers,
+    )
 
     // runtime.execute_script("<schema>", &schema).unwrap();
 }

@@ -10,7 +10,7 @@ use by_address::ByAddress;
 use downcast_rs::DowncastSync;
 use globset::{Candidate, GlobSet};
 
-use crate::{Database, Schema};
+use crate::{Cause, Database, Outcome, Schema};
 
 use super::db::Db;
 
@@ -190,12 +190,7 @@ impl ResolveRootFiles {
             .filter_map(|e| Some(e))
         {}
 
-        root_files::set(
-            db,
-            self.schema,
-            self.root.clone(),
-            PendingResult::Ok(results),
-        )
+        root_files::set(db, self.schema, self.root.clone(), Result::Ok(results))
     }
 }
 
@@ -204,7 +199,7 @@ pub fn root_files(
     db: &dyn Db,
     schema: Schema,
     root: PathBuf,
-) -> PendingResult<BTreeMap<FileGroup, Vec<PathBuf>>> {
+) -> Outcome<BTreeMap<FileGroup, Vec<PathBuf>>> {
     let groups = root_file_groups(db, schema, root.clone());
 
     let matchers = groups
@@ -220,20 +215,15 @@ pub fn root_files(
 
     RuntimeTask::push(db, task.clone());
 
-    PendingResult::Err(Pending)
+    Outcome::Err(Cause::Pending)
 }
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Pending;
-
-pub type PendingResult<T> = Result<T, Pending>;
 
 #[salsa::tracked]
 pub fn file_group_resolved_paths(
     db: &dyn Db,
     schema: Schema,
     group: FileGroup,
-) -> PendingResult<Vec<PathBuf>> {
+) -> Outcome<Vec<PathBuf>> {
     let root = file_group_root(db, schema, group);
 
     tracing::info!("Gettings files for {:?}, root: {:?}", group, root);
@@ -246,7 +236,7 @@ pub fn file_group_resolved_paths(
         .cloned()
         .expect("Root does not have this group");
 
-    PendingResult::Ok(paths)
+    Outcome::Ok(paths)
 }
 
 #[salsa::input]
@@ -267,7 +257,7 @@ pub fn file_modified_time_in_seconds(path: &Path) -> u64 {
 }
 
 #[salsa::tracked]
-pub fn file_group_files(db: &dyn Db, schema: Schema, group: FileGroup) -> PendingResult<Vec<File>> {
+pub fn file_group_files(db: &dyn Db, schema: Schema, group: FileGroup) -> Outcome<Vec<File>> {
     let files = file_group_resolved_paths(db, schema, group)?
         .into_iter()
         .map(|path| {
@@ -276,5 +266,5 @@ pub fn file_group_files(db: &dyn Db, schema: Schema, group: FileGroup) -> Pendin
         })
         .collect();
 
-    PendingResult::Ok(files)
+    Outcome::Ok(files)
 }

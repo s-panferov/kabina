@@ -1,27 +1,26 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+use std::path::PathBuf;
 
 #[salsa::jar(db = Db)]
 pub struct Jar(
     Project,
-    FileGroup,
+    crate::fileset::FileGroup,
     Diagnostic,
     Schema,
-    fileset::RuntimeTask,
-    transform::Transform,
-    transform::transform_inputs,
-    transform::transform_output,
-    transform::transform_result_for_file,
-    fileset::File,
-    fileset::roots,
-    fileset::file_group_root,
-    fileset::file_group_matcher,
-    fileset::root_files,
-    fileset::root_file_groups,
-    fileset::file_group_resolved_paths,
-    fileset::file_group_files,
+    crate::bundle::Bundle,
+    crate::server::Server,
+    crate::transform::Transform,
+    crate::transform::transform_inputs,
+    crate::transform::transform_output,
+    crate::transform::transform_result_for_file,
+    crate::fileset::RuntimeTask,
+    crate::fileset::File,
+    crate::fileset::roots,
+    crate::fileset::file_group_root,
+    crate::fileset::file_group_matcher,
+    crate::fileset::root_files,
+    crate::fileset::root_file_groups,
+    crate::fileset::file_group_resolved_paths,
+    crate::fileset::file_group_files,
 );
 
 pub trait Db: salsa::DbWithJar<Jar> {}
@@ -29,10 +28,7 @@ pub trait Db: salsa::DbWithJar<Jar> {}
 pub use salsa::debug::DebugWithDb;
 pub use salsa::AsId;
 
-use crate::{
-    fileset::{self, FileGroup},
-    transform, Executable, Schema,
-};
+use crate::Schema;
 
 #[salsa::db(Jar)]
 pub struct Database {

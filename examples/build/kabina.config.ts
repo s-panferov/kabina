@@ -1,4 +1,4 @@
-import { fileGroup, transform } from 'kabina'
+import { fileGroup, transform, server, bundle } from 'kabina'
 
 const cssFiles = fileGroup({
   name: "css",
@@ -15,38 +15,23 @@ const jsFiles = fileGroup({
   ]
 })
 
-const tranform = transform({
+const PostCSS = transform({
   name: "PostCSS",
   input: cssFiles,
   run: async (ctx) => {
   }
 })
 
-// export const concat = job({
-//   name: "concat",
-//   deps: [files],
-//   run: {
-//     func(input) {
-//       input
-//       return files;
-//     }
-//   }
-// })
+const appBundle = bundle({
+  name: "Application",
+  items: [
+    { prefix: "", content: PostCSS }
+  ]
+})
 
-// const webpack = job({
-//   name: "Webpack",
-//   deps: [concat],
-//   run: {
-//     binary: () => {
-//       return {
-//         command: 'webpack',
-//         arguments: ["webpack.config.js"],
-//         processLogs: {
-//           stdout: (line) => {
-//             reportStatus("ready")
-//           }
-//         }
-//       }
-//     }
-//   }
-// })
+const appServer = server({
+  name: "Kabina::Server",
+  routes: {
+    '*': appBundle
+  }
+})

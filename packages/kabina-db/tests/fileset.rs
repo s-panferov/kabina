@@ -18,7 +18,13 @@ fn test() {
         }],
     );
 
-    let schema = Schema::new(&db, [files].into_iter().collect(), Default::default());
+    let schema = Schema::new(
+        &db,
+        [files].into_iter().collect(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+    );
 
     let _ = kabina_db::file_group_files(&db, schema, files);
     let tasks = kabina_db::file_group_files::accumulated::<RuntimeTask>(&db, schema, files);
