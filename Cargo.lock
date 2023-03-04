@@ -761,6 +761,7 @@ dependencies = [
  "kabina-db",
  "kabina-rt",
  "parking_lot",
+ "paste",
  "tokio",
  "tracing-subscriber",
 ]
@@ -1045,6 +1046,12 @@ dependencies = [
  "smallvec",
  "windows-sys",
 ]
+
+[[package]]
+name = "paste"
+version = "1.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d01a5bd0424d00070b0098dd17ebca6f961a959dead1dbcbbbc1d1cd8d3deeba"
 
 [[package]]
 name = "pathdiff"
