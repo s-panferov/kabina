@@ -17,7 +17,7 @@ export interface FileGroup extends Input {
 
 export function fileGroup(req: FileGroupConfig): FileGroup
 
-export type Dependency = FileGroup | Transform<any>;
+export type Dependency = FileGroup | Transform<any> | Toolchain;
 
 export interface Input {
   __input?: "Input"
@@ -70,8 +70,8 @@ export type TransformRuner<I, D, O> = (input: MapDependenciesToArguments<I>, dep
 
 export type MapDependenciesToArguments<D> =
   D extends [...infer T] ? { [P in keyof T]: MapDependencyToArgument<T[P]> } :
-  D extends FileGroup ? MapDependencyToArgument<D> :
-  never;
+  D extends { [K in keyof D]: Dependency } ? { [P in keyof D]: MapDependencyToArgument<D[P]> } :
+  MapDependencyToArgument<D>;
 
 export interface FileMetadata {
   fileName: string
@@ -84,6 +84,7 @@ export interface FileContent extends FileMetadata {
 export type MapDependencyToArgument<D> =
   D extends FileGroup ? FileMetadata :
   D extends Job<infer O> ? MapDependencyToArgument<O> :
+  D extends Toolchain ? ToolchainRunner :
   never;
 
 export interface JobFunctionRunner<D, O> {
@@ -142,3 +143,18 @@ export interface Server {
 }
 
 export function server(config: ServerConfig): Server;
+
+export interface Toolchain {
+  kind: 'Toolchain'
+}
+
+export interface ToolchainConfig {
+  binary: string,
+  runner: 'native' | 'node',
+}
+
+export interface ToolchainRunner {
+  invoke(arguments: string[]): void
+}
+
+export function toolchain(config: ToolchainConfig): Toolchain;
