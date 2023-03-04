@@ -1,14 +1,16 @@
 import type {
   fileGroup as FileGroupFunc,
   transform as TransformFunc,
-  bundle as BundleFunc,
+  pack as PackageFunc,
   server as ServerFunc,
+  toolchain as ToolchainFunc,
   FileGroupConfig,
   TransformConfig,
   FileGroup,
   Transform,
-  BundleConfig,
+  PackageConfig,
   ServerConfig,
+  ToolchainConfig,
 } from "kabina";
 
 declare interface Deno {
@@ -16,8 +18,9 @@ declare interface Deno {
     ops: {
       file_group: (cfg: FileGroupConfig) => number;
       transform: (cfg: TransformConfigRuntime) => number;
-      bundle: (cfg: BundleConfig) => number;
+      package: (cfg: PackageConfig) => number;
       server: (cfg: ServerConfig) => number;
+      toolchain: (cfg: ToolchainConfig) => number;
     };
   };
 }
@@ -107,11 +110,11 @@ export const transform: typeof TransformFunc = <I, D, O>(
   };
 };
 
-export const bundle: typeof BundleFunc = (config: BundleConfig) => {
-  const id: number = Deno.core.ops.bundle(config);
+export const pack: typeof PackageFunc = (config: PackageConfig) => {
+  const id: number = Deno.core.ops.package(config);
 
   return {
-    kind: "Bundle",
+    kind: "Package",
     id
   }
 }
@@ -121,6 +124,15 @@ export const server: typeof ServerFunc = (config: ServerConfig) => {
 
   return {
     kind: "Server",
+    id
+  }
+}
+
+export const toolchain: typeof ToolchainFunc = (config: ToolchainConfig) => {
+  const id: number = Deno.core.ops.toolchain(config);
+
+  return {
+    kind: "Toolchain",
     id
   }
 }

@@ -1,32 +1,32 @@
 use std::{collections::BTreeMap, path::PathBuf};
 
-use crate::{file_group_files, transform_files, Cause, Db, DependencyKind, File, Outcome, Schema};
+use crate::{deps::Input, file_group_files, transform_files, Cause, Db, File, Outcome, Schema};
 
 #[derive(Debug, Clone)]
-pub struct BundleItem {
+pub struct CollectionItem {
     pub prefix: PathBuf,
-    pub content: DependencyKind,
+    pub content: Input,
 }
 
 #[salsa::input]
 #[derive(Debug, Clone)]
-pub struct Bundle {
+pub struct Collection {
     pub name: String,
-    pub items: Vec<BundleItem>,
+    pub items: Vec<CollectionItem>,
 }
 
 #[salsa::tracked]
-pub fn bundle_files(
+pub fn collection_files(
     db: &dyn Db,
     schema: Schema,
-    bundle: Bundle,
+    collection: Collection,
 ) -> Outcome<BTreeMap<PathBuf, File>> {
     let mut pending = false;
     let mut buffer = BTreeMap::new();
 
-    for item in bundle.items(db) {
+    for item in collection.items(db) {
         match item.content {
-            DependencyKind::FileGroup(g) => match file_group_files(db, schema, g) {
+            Input::FileGroup(g) => match file_group_files(db, schema, g) {
                 Ok(files) => {
                     for file in files {
                         let path = item.prefix.join(file.path(db));
@@ -36,7 +36,7 @@ pub fn bundle_files(
                 Err(Cause::Pending) => pending = true,
                 Err(e) => return Err(e),
             },
-            DependencyKind::Transform(t) => match transform_files(db, schema, t) {
+            Input::Transform(t) => match transform_files(db, schema, t) {
                 Ok(files) => {
                     for file in files {
                         let path = item.prefix.join(file.path(db));

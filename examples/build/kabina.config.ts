@@ -1,4 +1,4 @@
-import { fileGroup, transform, server, bundle, toolchain } from 'kabina'
+import { fileGroup, transform, server, pack, toolchain } from 'kabina'
 
 const cssFiles = fileGroup({
   name: "css",
@@ -15,9 +15,10 @@ const tsFiles = fileGroup({
   ]
 })
 
-const postcss = toolchain({
-  binary: "postcss",
-  runner: "node"
+const esbuild = toolchain({
+  name: "esbuild",
+  binary: "esbuild",
+  runner: "native"
 })
 
 const postCSS = transform({
@@ -25,11 +26,11 @@ const postCSS = transform({
   input: cssFiles,
   dependencies: { postcss },
   run: (ctx, { postcss }) => {
-    postcss.invoke([ctx.fileName])
+    return postcss.invoke([ctx.fileName])
   }
 })
 
-const appBundle = bundle({
+const appBundle = pack({
   name: "Application",
   items: [
     // { prefix: "", content: postCSS },

@@ -1,43 +1,45 @@
 use std::{path::PathBuf, sync::Arc};
 
 use deno_core::{op, OpState};
-use kabina_db::{Bundle, BundleItem, SchemaBuilder, SharedDatabase};
+use kabina_db::{Collection, CollectionItem, SchemaBuilder, SharedDatabase};
 use serde::Deserialize;
 
 use crate::transform::{map_js_dep, JsDependency};
 
 #[derive(Deserialize)]
-pub struct JsBundleItem {
+pub struct JsCollectionItem {
     prefix: PathBuf,
     content: JsDependency,
 }
 
 #[derive(Deserialize)]
-pub struct JsBundle {
+pub struct JsCollection {
     name: String,
-    items: Vec<JsBundleItem>,
+    items: Vec<JsCollectionItem>,
 }
 
 #[op]
-pub fn bundle(state: &mut OpState, b: JsBundle) -> Result<f64, deno_core::error::AnyError> {
-    tracing::info!("Bundle {:?} created ", b.name);
+pub fn collection(state: &mut OpState, b: JsCollection) -> Result<f64, deno_core::error::AnyError> {
+    tracing::info!("Collection {:?} created ", b.name);
 
     let db = state.borrow::<SharedDatabase>();
     let schema = state.borrow::<Arc<SchemaBuilder>>();
 
-    let handle = Bundle::new(
+    let handle = Collection::new(
         &*db.read(),
         b.name,
         b.items
             .into_iter()
-            .map(|i| BundleItem {
+            .map(|i| CollectionItem {
                 prefix: i.prefix,
-                content: map_js_dep(i.content),
+                content: map_js_dep(i.content)
+                    .to_input_kind()
+                    .expect("Input dependency"),
             })
             .collect(),
     );
 
-    schema.register_bundle(handle);
+    schema.register_collection(handle);
 
     Ok(usize::from(kabina_db::AsId::as_id(handle)) as f64)
 }

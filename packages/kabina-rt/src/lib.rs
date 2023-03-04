@@ -14,10 +14,11 @@ use kabina_db::SchemaBuilder;
 use kabina_db::SharedDatabase;
 use module::KabinaModuleLoader;
 
-mod bundle;
+mod collection;
 mod fileset;
 mod module;
 mod server;
+mod toolchain;
 mod transform;
 
 pub struct DenoRuntime {
@@ -30,8 +31,9 @@ impl DenoRuntime {
         let ext = Extension::builder("runtime")
             .ops(vec![fileset::file_group::decl()])
             .ops(vec![transform::transform::decl()])
-            .ops(vec![bundle::bundle::decl()])
+            .ops(vec![collection::collection::decl()])
             .ops(vec![server::server::decl()])
+            .ops(vec![toolchain::toolchain::decl()])
             .build();
 
         // Initialize a runtime instance
@@ -79,12 +81,12 @@ impl Runtime for DenoRuntime {
             &*self.db.read(),
             builder.file_groups,
             builder.transforms,
-            builder.bundles,
+            builder.collections,
             builder.servers,
         )
     }
 
-    async fn transform(&mut self, task: &kabina_db::ApplyTransform) -> kabina_db::File {
+    async fn transform(&mut self, task: &kabina_db::TransformApply) -> kabina_db::File {
         let id = AsId::as_id(task.transform).as_u32();
         let value = self
             .runtime

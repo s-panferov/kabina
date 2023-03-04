@@ -1,21 +1,15 @@
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
-use salsa::AsId;
-use serde_json::{value::Map, Value};
+use serde_json::Value;
 
 use crate::{
-    file_group_files, Cause, Db, Executable, File, FileGroup, Outcome, RuntimeTask, Schema,
+    deps::{extract_dependencies, replace_dependencies, Dependency, Input, ResolvedDependency},
+    file_group_files, toolchain_resolve, Cause, Db, Executable, File, Outcome, RuntimeTask, Schema,
 };
 
 #[derive(Debug, Clone)]
 pub enum RunnerKind {
     JsFunction(u64),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DependencyKind {
-    FileGroup(FileGroup),
-    Transform(Transform),
 }
 
 #[salsa::input]
@@ -27,36 +21,44 @@ pub struct Transform {
     dependencies: Value,
 }
 
-pub fn walk_object(o: &Map<String, Value>, buffer: &mut Vec<DependencyKind>) {
-    match (o.get("kind"), o.get("id")) {
-        (Some(kind), Some(id)) if kind.as_str() == Some("FileGroup") => buffer.push(
-            DependencyKind::FileGroup(FileGroup::from_id((id.as_u64().unwrap() as usize).into())),
-        ),
-        (Some(kind), Some(id)) if kind.as_str() == Some("Transform") => buffer.push(
-            DependencyKind::Transform(Transform::from_id((id.as_u64().unwrap() as usize).into())),
-        ),
-        _ => o.values().for_each(|v| walk_value(v, buffer)),
-    }
-}
-
-pub fn walk_value(v: &Value, buffer: &mut Vec<DependencyKind>) {
-    match v {
-        Value::Object(o) => walk_object(o, buffer),
-        Value::Array(a) => a.iter().for_each(|o| walk_value(o, buffer)),
-        _ => {}
-    }
+#[salsa::tracked]
+pub fn transform_inputs(db: &dyn Db, transform: Transform) -> Vec<Input> {
+    let input = transform.input(db);
+    let mut buffer: Vec<Dependency> = Vec::new();
+    extract_dependencies(&input, &mut buffer);
+    buffer
+        .into_iter()
+        .filter_map(Dependency::to_input_kind)
+        .collect()
 }
 
 #[salsa::tracked]
-pub fn transform_inputs(db: &dyn Db, transform: Transform) -> Vec<DependencyKind> {
-    let input = transform.input(db);
-    let mut buffer: Vec<DependencyKind> = Vec::new();
-    walk_value(&input, &mut buffer);
-    buffer
-}
+pub fn transform_dependencies(db: &dyn Db, transform: Transform) -> Outcome<Arc<Value>> {
+    let mut deps = transform.dependencies(db);
+    let mut buffer: Vec<Dependency> = Vec::new();
+    extract_dependencies(&deps, &mut buffer);
 
-#[derive(Clone)]
-pub struct TransformJob {}
+    let mut error: Result<(), Cause> = Ok(());
+    let mut resolved: BTreeMap<Dependency, ResolvedDependency> = Default::default();
+
+    for dep in &buffer {
+        match dep {
+            Dependency::Toolchain(t) => match toolchain_resolve(db, *t) {
+                Ok(t) => {
+                    resolved.insert(*dep, ResolvedDependency::Toolchain(t));
+                }
+                Err(c) => error = Err(c),
+            },
+            Dependency::FileGroup(_) => todo!(),
+            Dependency::Transform(_) => todo!(),
+        }
+    }
+
+    error?;
+
+    replace_dependencies(&mut deps, &mut resolved);
+    Ok(Arc::new(deps))
+}
 
 #[salsa::tracked]
 pub fn transform_files(db: &dyn Db, schema: Schema, transform: Transform) -> Outcome<Vec<File>> {
@@ -67,7 +69,7 @@ pub fn transform_files(db: &dyn Db, schema: Schema, transform: Transform) -> Out
 
     for input in inputs {
         match input {
-            DependencyKind::FileGroup(g) => match file_group_files(db, schema, g) {
+            Input::FileGroup(g) => match file_group_files(db, schema, g) {
                 Ok(files) => {
                     for file in files {
                         match transform_result_for_file(db, schema, transform, file) {
@@ -80,7 +82,7 @@ pub fn transform_files(db: &dyn Db, schema: Schema, transform: Transform) -> Out
                 Err(Cause::Pending) => pending = true,
                 Err(e) => return Err(e),
             },
-            DependencyKind::Transform(t) => match transform_files(db, schema, t) {
+            Input::Transform(t) => match transform_files(db, schema, t) {
                 Ok(files) => {
                     for file in files {
                         match transform_result_for_file(db, schema, transform, file) {
@@ -110,21 +112,25 @@ pub fn transform_result_for_file(
     transform: Transform,
     file: File,
 ) -> Outcome<File> {
+    let dependencies = transform_dependencies(db, transform)?;
+
     RuntimeTask::push(
         db,
-        Arc::new(ApplyTransform {
+        Arc::new(TransformApply {
             schema,
             file,
             transform,
+            dependencies,
         }),
     );
     Outcome::Err(Cause::Pending)
 }
 
-pub struct ApplyTransform {
+pub struct TransformApply {
     pub schema: Schema,
     pub file: File,
     pub transform: Transform,
+    pub dependencies: Arc<Value>,
 }
 
-impl Executable for ApplyTransform {}
+impl Executable for TransformApply {}

@@ -1,6 +1,6 @@
 use dashmap::DashSet;
 
-use crate::{Bundle, FileGroup, Server, Transform};
+use crate::{Collection, FileGroup, Server, Transform};
 
 #[salsa::input]
 pub struct Schema {
@@ -11,7 +11,7 @@ pub struct Schema {
     pub transforms: DashSet<Transform>,
 
     #[return_ref]
-    pub bundles: DashSet<Bundle>,
+    pub collections: DashSet<Collection>,
 
     #[return_ref]
     pub servers: DashSet<Server>,
@@ -21,7 +21,7 @@ pub struct Schema {
 pub struct SchemaBuilder {
     pub file_groups: DashSet<FileGroup>,
     pub transforms: DashSet<Transform>,
-    pub bundles: DashSet<Bundle>,
+    pub collections: DashSet<Collection>,
     pub servers: DashSet<Server>,
 }
 
@@ -34,8 +34,8 @@ impl SchemaBuilder {
         self.transforms.insert(transform);
     }
 
-    pub fn register_bundle(&self, bundle: Bundle) {
-        self.bundles.insert(bundle);
+    pub fn register_collection(&self, collection: Collection) {
+        self.collections.insert(collection);
     }
 
     pub fn register_server(&self, server: Server) {

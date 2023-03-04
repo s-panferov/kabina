@@ -122,16 +122,16 @@ export interface RouteConfig {
 
 }
 
-export interface BundleConfig {
+export interface PackageConfig {
   name: "Application"
   items: { prefix: string, content: Dependency }[]
 }
 
-export interface Bundle {
-  kind: 'Bundle'
+export interface Package {
+  kind: 'Package'
 }
 
-export function bundle(config: BundleConfig): Bundle;
+export function pack(config: PackageConfig): Package;
 
 export interface ServerConfig {
   name: string
@@ -149,6 +149,7 @@ export interface Toolchain {
 }
 
 export interface ToolchainConfig {
+  name: string,
   binary: string,
   runner: 'native' | 'node',
 }

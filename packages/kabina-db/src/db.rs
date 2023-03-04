@@ -7,13 +7,14 @@ pub struct Jar(
     crate::fileset::FileGroup,
     Diagnostic,
     Schema,
-    crate::bundle::Bundle,
-    crate::bundle::bundle_files,
+    crate::collection::Collection,
+    crate::collection::collection_files,
     crate::server::Server,
     crate::transform::Transform,
     crate::transform::transform_inputs,
     crate::transform::transform_files,
     crate::transform::transform_result_for_file,
+    crate::transform::transform_dependencies,
     crate::fileset::RuntimeTask,
     crate::fileset::File,
     crate::fileset::roots,
@@ -23,6 +24,9 @@ pub struct Jar(
     crate::fileset::root_file_groups,
     crate::fileset::file_group_resolved_paths,
     crate::fileset::file_group_files,
+    crate::toolchain::Toolchain,
+    // crate::toolchain::ToolchainObject,
+    crate::toolchain::toolchain_resolve,
 );
 
 pub trait Db: salsa::DbWithJar<Jar> {}

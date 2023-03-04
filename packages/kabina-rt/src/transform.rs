@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use deno_core::{op, serde_json::Value, OpState};
 use kabina_db::{
-    AsId, DependencyKind, FileGroup, RunnerKind, SchemaBuilder, SharedDatabase, Transform,
+    deps::Dependency, AsId, FileGroup, RunnerKind, SchemaBuilder, SharedDatabase, Toolchain,
+    Transform,
 };
 use serde::Deserialize;
 
@@ -11,6 +12,7 @@ use serde::Deserialize;
 pub enum JsDependency {
     FileGroup { id: usize },
     Transform { id: usize },
+    Toolchain { id: usize },
 }
 
 #[derive(Deserialize)]
@@ -22,10 +24,11 @@ pub struct JsTransform {
     dependencies: Value,
 }
 
-pub fn map_js_dep(dep: JsDependency) -> DependencyKind {
+pub fn map_js_dep(dep: JsDependency) -> Dependency {
     match dep {
-        JsDependency::FileGroup { id } => DependencyKind::FileGroup(FileGroup::from_id(id.into())),
-        JsDependency::Transform { id } => DependencyKind::Transform(Transform::from_id(id.into())),
+        JsDependency::FileGroup { id } => Dependency::FileGroup(FileGroup::from_id(id.into())),
+        JsDependency::Transform { id } => Dependency::Transform(Transform::from_id(id.into())),
+        JsDependency::Toolchain { id } => Dependency::Toolchain(Toolchain::from_id(id.into())),
     }
 }
 
