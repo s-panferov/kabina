@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use deno_core::{op, OpState};
-use kabina_db::{Database, SchemaBuilder};
+use kabina_db::{SchemaBuilder, SharedDatabase};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -46,11 +46,11 @@ pub fn file_group(state: &mut OpState, f: JsFileGroup) -> Result<f64, deno_core:
 
     tracing::info!("File group {:?} created at {:?}", f.name, root.to_str());
 
-    let db = state.borrow::<Arc<Database>>();
+    let db = state.borrow::<SharedDatabase>();
     let schema = state.borrow::<Arc<SchemaBuilder>>();
 
     let handle = kabina_db::FileGroup::new(
-        &**db,
+        &*db.read(),
         f.name,
         root,
         f.items

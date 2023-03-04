@@ -163,6 +163,12 @@ impl Executable for ResolveRootFiles {}
 impl ResolveRootFiles {
     pub fn resolve(&self, db: &mut Database) {
         let mut results: BTreeMap<FileGroup, Vec<PathBuf>> = BTreeMap::new();
+
+        for group in self.matchers.keys() {
+            // Fill with default values for each group
+            results.insert(*group, Vec::new());
+        }
+
         for _entry in walkdir::WalkDir::new(&self.root)
             .into_iter()
             .filter_entry(|e| {
@@ -178,10 +184,7 @@ impl ResolveRootFiles {
                 for (group, matcher) in &self.matchers {
                     if !matcher.matches_candidate(&candidate).is_empty() {
                         tracing::info!("Matched group {:?}", group);
-                        results
-                            .entry(*group)
-                            .or_insert_with(|| Vec::new())
-                            .push(e.path().to_owned())
+                        results.get_mut(group).unwrap().push(e.path().to_owned())
                     }
                 }
 
@@ -242,8 +245,8 @@ pub fn file_group_resolved_paths(
 #[salsa::input]
 pub struct File {
     #[salsa::id]
-    path: PathBuf,
-    revision: u64,
+    pub path: PathBuf,
+    pub revision: u64,
 }
 
 pub fn file_modified_time_in_seconds(path: &Path) -> u64 {

@@ -80,24 +80,27 @@ interface TransformConfigRuntime {
 let runtimeFunctionsSeq = 0;
 
 // deno-lint-ignore ban-types
-const runtimeFunctions = new Map<number, WeakRef<Function>>();
+const transforms = new Map<number, Function>();
+
+(globalThis as any).__transforms = transforms;
 
 export const transform: typeof TransformFunc = <I, D, O>(
   transformConfig: TransformConfig<I, D, O>
 ) => {
-  const runnerId = runtimeFunctionsSeq++;
-
-  runtimeFunctions.set(runnerId, new WeakRef(() => { }));
+  // const runnerId = runtimeFunctionsSeq++;
 
   const config: TransformConfigRuntime = {
     name: transformConfig.name,
     module: caller(),
     input: transformConfig.input,
     dependencies: transformConfig.dependencies || null,
-    runner: runnerId,
+    runner: 0,
   };
 
   const id: number = Deno.core.ops.transform(config);
+
+  transforms.set(id, transformConfig.run);
+
   return {
     kind: "Transform",
     id,

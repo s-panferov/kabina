@@ -123,7 +123,7 @@ export interface RouteConfig {
 
 export interface BundleConfig {
   name: "Application"
-  items: [{ prefix: string, content: Dependency }]
+  items: { prefix: string, content: Dependency }[]
 }
 
 export interface Bundle {

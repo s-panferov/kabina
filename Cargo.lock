@@ -760,6 +760,7 @@ dependencies = [
  "clap",
  "kabina-db",
  "kabina-rt",
+ "parking_lot",
  "tokio",
  "tracing-subscriber",
 ]
@@ -774,6 +775,7 @@ dependencies = [
  "downcast-rs",
  "globset",
  "indexmap",
+ "parking_lot",
  "salsa-2022",
  "serde_json",
  "thiserror",
@@ -790,6 +792,7 @@ dependencies = [
  "deno_core",
  "futures",
  "kabina-db",
+ "parking_lot",
  "serde",
  "tokio",
  "tracing",

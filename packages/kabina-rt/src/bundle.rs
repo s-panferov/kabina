@@ -1,10 +1,10 @@
 use std::{path::PathBuf, sync::Arc};
 
 use deno_core::{op, OpState};
-use kabina_db::{Bundle, Database, SchemaBuilder};
+use kabina_db::{Bundle, BundleItem, SchemaBuilder, SharedDatabase};
 use serde::Deserialize;
 
-use crate::transform::JsDependency;
+use crate::transform::{map_js_dep, JsDependency};
 
 #[derive(Deserialize)]
 pub struct JsBundleItem {
@@ -22,10 +22,20 @@ pub struct JsBundle {
 pub fn bundle(state: &mut OpState, b: JsBundle) -> Result<f64, deno_core::error::AnyError> {
     tracing::info!("Bundle {:?} created ", b.name);
 
-    let db = state.borrow::<Arc<Database>>();
+    let db = state.borrow::<SharedDatabase>();
     let schema = state.borrow::<Arc<SchemaBuilder>>();
 
-    let handle = Bundle::new(&**db, b.name, vec![]);
+    let handle = Bundle::new(
+        &*db.read(),
+        b.name,
+        b.items
+            .into_iter()
+            .map(|i| BundleItem {
+                prefix: i.prefix,
+                content: map_js_dep(i.content),
+            })
+            .collect(),
+    );
 
     schema.register_bundle(handle);
 

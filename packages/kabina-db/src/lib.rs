@@ -1,9 +1,11 @@
 #![feature(btree_drain_filter)]
+#![feature(async_fn_in_trait)]
 
 mod bundle;
 pub mod db;
 mod error;
 mod fileset;
+pub mod runtime;
 mod schema;
 mod server;
 mod transform;

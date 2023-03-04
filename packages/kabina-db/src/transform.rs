@@ -1,7 +1,11 @@
+use std::sync::Arc;
+
 use salsa::AsId;
 use serde_json::{value::Map, Value};
 
-use crate::{file_group_files, Db, File, FileGroup, Schema};
+use crate::{
+    file_group_files, Cause, Db, Executable, File, FileGroup, Outcome, RuntimeTask, Schema,
+};
 
 #[derive(Debug, Clone)]
 pub enum RunnerKind {
@@ -54,31 +58,73 @@ pub fn transform_inputs(db: &dyn Db, transform: Transform) -> Vec<DependencyKind
 #[derive(Clone)]
 pub struct TransformJob {}
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct TransformState {
-    missing: Vec<()>,
-    ready: Vec<()>,
-}
-
 #[salsa::tracked]
-pub fn transform_output(db: &dyn Db, schema: Schema, transform: Transform) -> TransformState {
+pub fn transform_files(db: &dyn Db, schema: Schema, transform: Transform) -> Outcome<Vec<File>> {
     let inputs = transform_inputs(db, transform);
+
+    let mut pending = false;
+    let mut buffer = Vec::new();
 
     for input in inputs {
         match input {
-            DependencyKind::FileGroup(g) => {
-                let files = file_group_files(db, schema, g);
-            }
-            DependencyKind::Transform(t) => {
-                panic!("Not supported")
-            }
+            DependencyKind::FileGroup(g) => match file_group_files(db, schema, g) {
+                Ok(files) => {
+                    for file in files {
+                        match transform_result_for_file(db, schema, transform, file) {
+                            Ok(file) => buffer.push(file),
+                            Err(Cause::Pending) => pending = true,
+                            Err(e) => return Err(e),
+                        }
+                    }
+                }
+                Err(Cause::Pending) => pending = true,
+                Err(e) => return Err(e),
+            },
+            DependencyKind::Transform(t) => match transform_files(db, schema, t) {
+                Ok(files) => {
+                    for file in files {
+                        match transform_result_for_file(db, schema, transform, file) {
+                            Ok(file) => buffer.push(file),
+                            Err(Cause::Pending) => pending = true,
+                            Err(e) => return Err(e),
+                        }
+                    }
+                }
+                Err(Cause::Pending) => pending = true,
+                Err(e) => return Err(e),
+            },
         }
     }
 
-    TransformState::default()
+    if pending {
+        return Err(Cause::Pending);
+    }
+
+    return Ok(buffer);
 }
 
 #[salsa::tracked]
-pub fn transform_result_for_file(db: &dyn Db, transform: Transform, file: File) -> Option<()> {
-    None
+pub fn transform_result_for_file(
+    db: &dyn Db,
+    schema: Schema,
+    transform: Transform,
+    file: File,
+) -> Outcome<File> {
+    RuntimeTask::push(
+        db,
+        Arc::new(ApplyTransform {
+            schema,
+            file,
+            transform,
+        }),
+    );
+    Outcome::Err(Cause::Pending)
 }
+
+pub struct ApplyTransform {
+    pub schema: Schema,
+    pub file: File,
+    pub transform: Transform,
+}
+
+impl Executable for ApplyTransform {}

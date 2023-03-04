@@ -10,3 +10,4 @@ kabina-rt={ path = "../kabina-rt" }
 kabina-db={ path = "../kabina-db" }
 tokio={ version = "1.25.0", features = ["full"] }
 tracing-subscriber= "0.3.16"
+parking_lot="*"

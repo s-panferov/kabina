@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 #[salsa::jar(db = Db)]
 pub struct Jar(
@@ -7,10 +8,11 @@ pub struct Jar(
     Diagnostic,
     Schema,
     crate::bundle::Bundle,
+    crate::bundle::bundle_files,
     crate::server::Server,
     crate::transform::Transform,
     crate::transform::transform_inputs,
-    crate::transform::transform_output,
+    crate::transform::transform_files,
     crate::transform::transform_result_for_file,
     crate::fileset::RuntimeTask,
     crate::fileset::File,
@@ -25,6 +27,7 @@ pub struct Jar(
 
 pub trait Db: salsa::DbWithJar<Jar> {}
 
+use parking_lot::RwLock;
 pub use salsa::debug::DebugWithDb;
 pub use salsa::AsId;
 
@@ -64,3 +67,5 @@ impl salsa::ParallelDatabase for Database {
 struct Diagnostic(String);
 
 impl Diagnostic {}
+
+pub type SharedDatabase = Arc<RwLock<Database>>;

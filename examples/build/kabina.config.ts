@@ -7,25 +7,27 @@ const cssFiles = fileGroup({
   ]
 })
 
-const jsFiles = fileGroup({
+const tsFiles = fileGroup({
   name: "js",
   root: "src",
   items: [
-    { pattern: '**/*.js' }
+    { pattern: '**/*.ts' }
   ]
 })
 
-const PostCSS = transform({
+const postCSS = transform({
   name: "PostCSS",
   input: cssFiles,
-  run: async (ctx) => {
+  run: (ctx) => {
+    return true
   }
 })
 
 const appBundle = bundle({
   name: "Application",
   items: [
-    { prefix: "", content: PostCSS }
+    // { prefix: "", content: postCSS },
+    { prefix: "", content: postCSS }
   ]
 })
 
