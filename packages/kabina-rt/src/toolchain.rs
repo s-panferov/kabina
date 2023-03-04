@@ -1,12 +1,12 @@
-use std::sync::Arc;
-
 use deno_core::{op, OpState};
-use kabina_db::{SchemaBuilder, SharedDatabase, Toolchain};
+use kabina_db::{SharedDatabase, Toolchain};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct JsToolchain {
     name: String,
+    binary: String,
+    runner: String,
 }
 
 #[op]
@@ -14,9 +14,9 @@ pub fn toolchain(state: &mut OpState, f: JsToolchain) -> Result<f64, deno_core::
     tracing::info!("Toolchain {:?} created", f.name);
 
     let db = state.borrow::<SharedDatabase>();
-    let schema = state.borrow::<Arc<SchemaBuilder>>();
+    // let schema = state.borrow::<Arc<SchemaBuilder>>();
 
-    let handle = Toolchain::new(&*db.read(), f.name);
+    let handle = Toolchain::new(&*db.read(), f.name, f.binary, f.runner);
 
     // schema.register_transform(handle);
 

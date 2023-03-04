@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 use serde::Serialize;
 
@@ -7,14 +7,18 @@ use crate::{Cause, Db, Executable, Outcome, RuntimeTask};
 #[salsa::input]
 #[derive(Debug, Clone)]
 pub struct Toolchain {
-    name: String,
+    pub name: String,
+    pub binary: String,
+    pub runner: String,
 }
 pub struct ToolchainResolve {
     pub toolchain: Toolchain,
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
-pub struct ToolchainObject {}
+pub struct ToolchainObject {
+    pub binary: PathBuf,
+}
 
 #[salsa::tracked]
 pub fn toolchain_resolve(db: &dyn Db, toolchain: Toolchain) -> Outcome<ToolchainObject> {
@@ -23,3 +27,9 @@ pub fn toolchain_resolve(db: &dyn Db, toolchain: Toolchain) -> Outcome<Toolchain
 }
 
 impl Executable for ToolchainResolve {}
+
+impl ToolchainResolve {
+    pub fn resolve(&self, db: &mut dyn Db, object: Outcome<ToolchainObject>) {
+        toolchain_resolve::set(db, self.toolchain, object)
+    }
+}

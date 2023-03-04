@@ -1,14 +1,14 @@
 import type {
   fileGroup as FileGroupFunc,
   transform as TransformFunc,
-  pack as PackageFunc,
+  collection as CollectionFunc,
   server as ServerFunc,
   toolchain as ToolchainFunc,
   FileGroupConfig,
   TransformConfig,
   FileGroup,
   Transform,
-  PackageConfig,
+  CollectionConfig,
   ServerConfig,
   ToolchainConfig,
 } from "kabina";
@@ -18,7 +18,7 @@ declare interface Deno {
     ops: {
       file_group: (cfg: FileGroupConfig) => number;
       transform: (cfg: TransformConfigRuntime) => number;
-      package: (cfg: PackageConfig) => number;
+      collection: (cfg: CollectionConfig) => number;
       server: (cfg: ServerConfig) => number;
       toolchain: (cfg: ToolchainConfig) => number;
     };
@@ -83,9 +83,9 @@ interface TransformConfigRuntime {
 let runtimeFunctionsSeq = 0;
 
 // deno-lint-ignore ban-types
-const transforms = new Map<number, Function>();
+const transforms: { [key: number]: Function } = {};
 
-(globalThis as any).__transforms = transforms;
+export const __transforms = transforms;
 
 export const transform: typeof TransformFunc = <I, D, O>(
   transformConfig: TransformConfig<I, D, O>
@@ -102,7 +102,7 @@ export const transform: typeof TransformFunc = <I, D, O>(
 
   const id: number = Deno.core.ops.transform(config);
 
-  transforms.set(id, transformConfig.run);
+  transforms[id] = transformConfig.run;
 
   return {
     kind: "Transform",
@@ -110,11 +110,11 @@ export const transform: typeof TransformFunc = <I, D, O>(
   };
 };
 
-export const pack: typeof PackageFunc = (config: PackageConfig) => {
-  const id: number = Deno.core.ops.package(config);
+export const collection: typeof CollectionFunc = (config: CollectionConfig) => {
+  const id: number = Deno.core.ops.collection(config);
 
   return {
-    kind: "Package",
+    kind: "Collection",
     id
   }
 }

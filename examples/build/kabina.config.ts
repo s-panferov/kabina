@@ -1,4 +1,4 @@
-import { fileGroup, transform, server, pack, toolchain } from 'kabina'
+import { fileGroup, transform, server, collection, toolchain } from 'kabina'
 
 const cssFiles = fileGroup({
   name: "css",
@@ -24,13 +24,13 @@ const esbuild = toolchain({
 const postCSS = transform({
   name: "PostCSS",
   input: cssFiles,
-  dependencies: { postcss },
-  run: (ctx, { postcss }) => {
-    return postcss.invoke([ctx.fileName])
+  dependencies: { esbuild },
+  run: (ctx, { esbuild }) => {
+    return true
   }
 })
 
-const appBundle = pack({
+const appCollection = collection({
   name: "Application",
   items: [
     // { prefix: "", content: postCSS },
@@ -41,6 +41,6 @@ const appBundle = pack({
 const appServer = server({
   name: "Kabina::Server",
   routes: {
-    '*': appBundle
+    '*': appCollection
   }
 })

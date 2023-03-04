@@ -775,6 +775,7 @@ dependencies = [
  "parking_lot",
  "paste",
  "tokio",
+ "tracing",
  "tracing-subscriber",
  "which",
 ]

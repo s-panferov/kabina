@@ -62,10 +62,20 @@ export type MapLike<T> = T | T[] | { [key: string]: T }
 
 export function transform<I extends ArrayLike<Dependency>, D extends MapLike<Dependency>, O>(transform: TransformConfig<I, D, O>): Transform<O>;
 
+export interface BundleConfig<I, D, O> {
+  name: string,
+  input: I,
+  run: BundleRuner<I, D, O>
+  dependencies?: D
+}
+
+export function bundle<I extends ArrayLike<Dependency>, D extends MapLike<Dependency>, O>(transform: BundleConfig<I, D, O>): Transform<O>;
+
 export interface TransformBinaryRunner<I, D, O> {
   binary: (input: MapDependenciesToArguments<I>, dependencies: MapDependenciesToArguments<D>) => InvocationConfig<O>
 }
 
+export type BundleRuner<I, D, O> = (input: MapDependenciesToArguments<I>, dependencies: MapDependenciesToArguments<D>) => O;
 export type TransformRuner<I, D, O> = (input: MapDependenciesToArguments<I>, dependencies: MapDependenciesToArguments<D>) => O;
 
 export type MapDependenciesToArguments<D> =
@@ -122,16 +132,16 @@ export interface RouteConfig {
 
 }
 
-export interface PackageConfig {
-  name: "Application"
+export interface CollectionConfig {
+  name: string
   items: { prefix: string, content: Dependency }[]
 }
 
-export interface Package {
-  kind: 'Package'
+export interface Collection {
+  kind: 'Collection'
 }
 
-export function pack(config: PackageConfig): Package;
+export function collection(config: CollectionConfig): Collection;
 
 export interface ServerConfig {
   name: string

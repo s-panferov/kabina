@@ -5,7 +5,7 @@ use std::{error::Error, path::PathBuf, sync::Arc};
 use clap::Parser;
 use kabina_db::{
     collection_files, runtime::Runtime, Cause, Executable, ResolveRootFiles, RuntimeTask,
-    SharedDatabase, ToolchainResolve, TransformApply,
+    SharedDatabase, ToolchainObject, ToolchainResolve, TransformApply,
 };
 
 use kabina_rt::DenoRuntime;
@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let db = Arc::new(RwLock::new(kabina_db::Database::new()));
 
-            let mut runtime = Box::new(DenoRuntime::new(db.clone()));
+            let mut runtime = Box::new(tokio.block_on(DenoRuntime::new(db.clone())));
 
             // Populating the schema from TS
             let schema = tokio.block_on(runtime.load_schema(schema));
@@ -96,6 +96,13 @@ pub async fn drive_task(task: &dyn Executable, db: &SharedDatabase, rt: &mut Box
     } else if let Some(task) = task.downcast_ref::<TransformApply>() {
         rt.transform(task).await;
     } else if let Some(task) = task.downcast_ref::<ToolchainResolve>() {
-        panic!("Toolchain resolution is not implemented")
+        let binary = task.toolchain.binary(&*db.read());
+        match which::which(&binary) {
+            Ok(path) => {
+                tracing::info!("[ToolchainResolve] Resolved {:?} to {:?}", binary, path);
+                task.resolve(&mut *db.write(), Ok(ToolchainObject { binary: path }))
+            }
+            Err(e) => task.resolve(&mut *db.write(), Err(Cause::from_err(e))),
+        }
     }
 }

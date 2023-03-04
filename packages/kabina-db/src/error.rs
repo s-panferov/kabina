@@ -11,4 +11,10 @@ pub enum Cause {
     Error(#[from] Arc<ByAddress<anyhow::Error>>),
 }
 
+impl Cause {
+    pub fn from_err(e: impl std::error::Error + Send + Sync + 'static) -> Cause {
+        Cause::Error(Arc::new(ByAddress(e.into())))
+    }
+}
+
 pub type Outcome<T> = std::result::Result<T, Cause>;

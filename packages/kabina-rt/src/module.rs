@@ -17,8 +17,14 @@ use deno_core::ResolutionKind;
 use futures::FutureExt;
 pub struct KabinaModuleLoader;
 
-const RUNTIME_URL: &'static str = "kabina:///runtime.ts";
-const RUNTIME: &'static str = include_str!("../runtime.ts");
+pub const RUNTIME_URL: &'static str = "kabina:///runtime.ts";
+pub const RUNTIME: &'static str = include_str!("../runtime.ts");
+
+impl KabinaModuleLoader {
+    pub fn runtime_module_specifier() -> ModuleSpecifier {
+        ModuleSpecifier::from_str(RUNTIME_URL).unwrap()
+    }
+}
 
 impl ModuleLoader for KabinaModuleLoader {
     fn resolve(
@@ -28,7 +34,7 @@ impl ModuleLoader for KabinaModuleLoader {
         _kind: ResolutionKind,
     ) -> Result<ModuleSpecifier, Error> {
         match specifier {
-            "kabina" => return Ok(ModuleSpecifier::from_str(RUNTIME_URL).unwrap()),
+            "kabina" => return Ok(Self::runtime_module_specifier()),
             _ => {}
         }
 
