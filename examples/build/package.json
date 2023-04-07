@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "kabina": "workspace",
-    "typescript": "^4.9.5"
+    "kabina": "workspace:^1.0.0",
+    "typescript": "^5.0.4"
   }
 }

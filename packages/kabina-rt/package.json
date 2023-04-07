@@ -11,6 +11,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "kabina": "workspace"
+    "kabina": "workspace:^1.0.0"
   }
 }
