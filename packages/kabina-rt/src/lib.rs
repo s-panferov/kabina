@@ -58,17 +58,7 @@ impl DenoRuntime {
         let std = runtime
             .load_side_module(
                 &std_url,
-                Some(
-                    String::from_utf8(
-                        loader
-                            .load(&std_url, None, false)
-                            .await
-                            .unwrap()
-                            .code
-                            .to_vec(),
-                    )
-                    .unwrap(),
-                ),
+                Some(loader.load(&std_url, None, false).await.unwrap().code),
             )
             .await
             .unwrap();
@@ -90,7 +80,10 @@ impl Runtime for DenoRuntime {
         let source = tokio::fs::read_to_string(schema_path).await.unwrap();
         let module = self
             .runtime
-            .load_main_module(&url, Some(source))
+            .load_main_module(
+                &url,
+                Some(deno_core::ModuleCode::Owned(source.into_bytes())),
+            )
             .await
             .unwrap();
 

@@ -80,8 +80,6 @@ interface TransformConfigRuntime {
   dependencies: any;
 }
 
-let runtimeFunctionsSeq = 0;
-
 // deno-lint-ignore ban-types
 const transforms: { [key: number]: Function } = {};
 

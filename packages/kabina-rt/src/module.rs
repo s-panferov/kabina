@@ -8,6 +8,7 @@ use deno_ast::MediaType;
 use deno_ast::ParseParams;
 use deno_ast::SourceTextInfo;
 use deno_core::resolve_import;
+use deno_core::ModuleCode;
 use deno_core::ModuleLoader;
 use deno_core::ModuleSource;
 use deno_core::ModuleSourceFuture;
@@ -54,8 +55,8 @@ impl ModuleLoader for KabinaModuleLoader {
                 .to_file_path()
                 .map_err(|_| anyhow!("Only file: URLs are supported."))?;
 
-            let media_type = MediaType::from(&path);
-            let (module_type, should_transpile) = match MediaType::from(&path) {
+            let media_type = MediaType::from_path(&path);
+            let (module_type, should_transpile) = match media_type {
                 MediaType::JavaScript | MediaType::Mjs | MediaType::Cjs => {
                     (ModuleType::JavaScript, false)
                 }
@@ -92,7 +93,7 @@ impl ModuleLoader for KabinaModuleLoader {
             };
 
             let module = ModuleSource {
-                code: code.into_bytes().into_boxed_slice(),
+                code: ModuleCode::Owned(code.into_bytes()),
                 module_type,
                 module_url_specified: module_specifier.to_string(),
                 module_url_found: module_specifier.to_string(),
