@@ -5,12 +5,12 @@ name = "kabina-rt"
 version = "0.0.4"
 
 [dependencies]
-deno_core= "0.173.0"
-deno_ast={ version = "0.24.0", features = ["transpiling"] }
-anyhow= "1.0.69"
-futures= "0.3.26"
-serde= "1.0.152"
+deno_core= "0.179.0"
+deno_ast={ version = "0.25.0", features = ["transpiling"] }
+anyhow= "1.0.70"
+futures= "0.3.28"
+serde= "1.0.159"
 tracing= "0.1.37"
-tokio={ version = "1.26.0", features = ["full"] }
+tokio={ version = "1.27.0", features = ["full"] }
 kabina-db={path="../kabina-db"}
 parking_lot= "0.12.1"

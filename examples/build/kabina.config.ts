@@ -26,6 +26,7 @@ const postCSS = transform({
   input: cssFiles,
   dependencies: { esbuild },
   run: (ctx, { esbuild }) => {
+    invoke()
     return true
   }
 })

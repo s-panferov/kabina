@@ -18,6 +18,7 @@ use kabina_db::SchemaBuilder;
 use kabina_db::SharedDatabase;
 use module::KabinaModuleLoader;
 use module::RUNTIME;
+use serde::Serialize;
 
 mod collection;
 mod fileset;
@@ -141,7 +142,27 @@ impl Runtime for DenoRuntime {
 
         let function = Local::<v8::Function>::try_from(function).unwrap();
         let null = v8::null(&mut scope).into();
-        let value = function.call(&mut scope, null, &[]).unwrap();
+
+        #[derive(Serialize)]
+        #[allow(non_snake_case)]
+        struct Context {
+            filePath: String,
+        }
+
+        let db = self.db.read();
+
+        let deps_v8 = deno_core::serde_v8::to_v8(&mut scope, &*task.dependencies).unwrap();
+        let context = deno_core::serde_v8::to_v8(
+            &mut scope,
+            Context {
+                filePath: task.file.path(&*db).to_string_lossy().to_string(),
+            },
+        )
+        .unwrap();
+
+        let value = function
+            .call(&mut scope, null, &[context, deps_v8])
+            .unwrap();
 
         println!("{:?}", value.is_boolean());
 
