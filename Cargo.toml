@@ -3,6 +3,7 @@ members = [
   "packages/kabina-cli",
   "packages/kabina-rt",
   "packages/kabina-ui",
+  "packages/kabina-rpc",
   "packages/kabina-db"
 ]
 

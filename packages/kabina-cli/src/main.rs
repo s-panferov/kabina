@@ -11,6 +11,8 @@ use kabina_db::{
 use kabina_rt::DenoRuntime;
 use parking_lot::RwLock;
 
+mod daemon;
+
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -21,6 +23,13 @@ enum Command {
         #[arg(long)]
         collection: String,
     },
+    #[clap(subcommand)]
+    Daemon(Daemon),
+}
+
+#[derive(clap::Parser, Debug)]
+enum Daemon {
+    Start {},
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -33,7 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             mut schema,
             collection: bundle,
         } => {
-            let tokio = tokio::runtime::Builder::new_multi_thread()
+            let rt = tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()?;
 
@@ -43,10 +52,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let db = Arc::new(RwLock::new(kabina_db::Database::new()));
 
-            let mut runtime = Box::new(tokio.block_on(DenoRuntime::new(db.clone())));
+            let mut runtime = Box::new(rt.block_on(DenoRuntime::new(db.clone())));
 
             // Populating the schema from TS
-            let schema = tokio.block_on(runtime.load_schema(schema));
+            let schema = rt.block_on(runtime.load_schema(schema));
 
             let collection = {
                 let db = db.read();
@@ -60,8 +69,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 collection
             };
 
-            tokio.block_on(drive!(runtime, collection_files(db, schema, collection)));
+            rt.block_on(drive!(runtime, collection_files(db, schema, collection)));
         }
+        Command::Daemon(Daemon::Start {}) => daemon::daemon_start(),
     }
 
     Ok(())

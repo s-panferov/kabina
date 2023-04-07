@@ -1,0 +1,8 @@
+[package]
+authors = ["Stanislav Panferov <stanislav@panferov.dev>"]
+edition = "2021"
+name = "kabina-rpc"
+version = "0.0.4"
+
+[dependencies]
+tarpc = { version = "*" }
