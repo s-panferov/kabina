@@ -1,4 +1,5 @@
 {
   "deno.enable": true,
-  "deno.importMap": "./packages/kabina-ts/import-map.json"
+  "deno.importMap": "./packages/kabina-ts/import-map.json",
+  "rust-analyzer.showUnlinkedFileNotification": false
 }

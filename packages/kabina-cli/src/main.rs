@@ -12,6 +12,7 @@ use kabina_rt::DenoRuntime;
 use parking_lot::RwLock;
 
 mod daemon;
+mod server;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
