@@ -1,30 +1,33 @@
-use std::{path::PathBuf, time::Duration};
+use std::{fs::File, path::PathBuf, time::Duration};
 
 use futures::{future, StreamExt};
 use kabina_rpc::{Kabina, KabinaClient};
 use tarpc::{context::current, server::Channel, tokio_serde::formats::Bincode};
 
-use tokio::time::sleep;
+use tokio::{runtime::Runtime, time::sleep};
 
 use crate::server::{KabinaServer, VERSION};
 
-pub fn daemon_start() {
-    // let stdout = File::create("/tmp/kabina.out").unwrap();
-    // let stderr = File::create("/tmp/kabina.err").unwrap();
+pub fn runtime() -> Runtime {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+}
+
+pub fn daemon_start() -> Result<(), anyhow::Error> {
+    let stdout = File::create("/tmp/kabina.out")?;
+    let stderr = File::create("/tmp/kabina.err")?;
 
     let daemon = daemonize::Daemonize::new()
         .pid_file(PathBuf::from("/tmp/kabina.pid"))
-        .stdout(daemonize::Stdio::keep())
-        .stderr(daemonize::Stdio::keep());
+        .stdout(stdout)
+        .stderr(stderr);
 
     match daemon.execute() {
         daemonize::Outcome::Parent(r) => match r {
-            Ok(p) => {
-                let rt = tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap();
-
+            Ok(_p) => {
+                let rt = runtime();
                 let restart = rt.block_on(async move {
                     // FIXME: wait until socket is created
                     sleep(Duration::from_millis(300)).await;
@@ -43,24 +46,40 @@ pub fn daemon_start() {
 
                 if restart {
                     std::mem::drop(rt);
-                    daemon_start()
+                    return daemon_start();
                 }
+
+                Ok(())
             }
             Err(e) => panic!("Failed to start the daemon {}", e),
         },
         daemonize::Outcome::Child(r) => match r {
             Ok(_) => {
                 tracing::info!("Starting server");
-                let rt = tokio::runtime::Builder::new_multi_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap();
-
-                rt.block_on(daemon_server()).unwrap();
+                let rt = runtime();
+                rt.block_on(daemon_server())
             }
             Err(e) => panic!("Failed to start the daemon: {}", e),
         },
     }
+}
+
+pub fn daemon_restart() -> Result<(), anyhow::Error> {
+    daemon_stop()?;
+    daemon_start()
+}
+
+pub fn daemon_stop() -> Result<(), anyhow::Error> {
+    let rt = runtime();
+    rt.block_on(async {
+        match daemon_client().await {
+            Ok(client) => match client.terminate(current()).await {
+                Ok(_) => unreachable!(),
+                Err(_) => return Ok(()),
+            },
+            Err(_) => return Ok(()),
+        }
+    })
 }
 
 pub async fn daemon_server() -> Result<(), anyhow::Error> {

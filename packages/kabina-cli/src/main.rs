@@ -31,9 +31,11 @@ enum Command {
 #[derive(clap::Parser, Debug)]
 enum Daemon {
     Start {},
+    Stop {},
+    Restart {},
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), anyhow::Error> {
     let args = Command::parse();
 
     tracing_subscriber::fmt::init();
@@ -71,11 +73,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             };
 
             rt.block_on(drive!(runtime, collection_files(db, schema, collection)));
-        }
-        Command::Daemon(Daemon::Start {}) => daemon::daemon_start(),
-    }
 
-    Ok(())
+            Ok(())
+        }
+        Command::Daemon(daemon) => match daemon {
+            Daemon::Start {} => daemon::daemon_start(),
+            Daemon::Stop {} => daemon::daemon_stop(),
+            Daemon::Restart {} => daemon::daemon_restart(),
+        },
+    }
 }
 
 pub macro drive($rt:expr, $func:ident($db:expr, $($arg:expr),+)) {
