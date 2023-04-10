@@ -4,6 +4,7 @@ import type {
   collection as CollectionFunc,
   server as ServerFunc,
   toolchain as ToolchainFunc,
+  service as ServiceFunc,
   FileGroupConfig,
   TransformConfig,
   FileGroup,
@@ -11,6 +12,7 @@ import type {
   CollectionConfig,
   ServerConfig,
   ToolchainConfig,
+  ServiceConfig
 } from "kabina";
 
 declare interface Deno {
@@ -20,6 +22,7 @@ declare interface Deno {
       transform: (cfg: TransformConfigRuntime) => number;
       collection: (cfg: CollectionConfig) => number;
       server: (cfg: ServerConfig) => number;
+      service: (cfg: ServiceConfig) => number;
       toolchain: (cfg: ToolchainConfig) => number;
     };
   };
@@ -131,6 +134,16 @@ export const toolchain: typeof ToolchainFunc = (config: ToolchainConfig) => {
 
   return {
     kind: "Toolchain",
+    id
+  }
+}
+
+
+export const service: typeof ServiceFunc = (config: ServiceConfig) => {
+  const id: number = Deno.core.ops.service(config);
+
+  return {
+    kind: "Service",
     id
   }
 }

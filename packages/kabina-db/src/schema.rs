@@ -1,6 +1,6 @@
 use dashmap::DashSet;
 
-use crate::{Collection, FileGroup, Server, Transform};
+use crate::{Collection, FileGroup, Server, Service, Transform};
 
 #[salsa::input]
 pub struct Schema {
@@ -15,6 +15,9 @@ pub struct Schema {
 
 	#[return_ref]
 	pub servers: DashSet<Server>,
+
+	#[return_ref]
+	pub services: DashSet<Service>,
 }
 
 #[derive(Default)]
@@ -23,6 +26,7 @@ pub struct SchemaBuilder {
 	pub transforms: DashSet<Transform>,
 	pub collections: DashSet<Collection>,
 	pub servers: DashSet<Server>,
+	pub services: DashSet<Service>,
 }
 
 impl SchemaBuilder {
@@ -40,5 +44,9 @@ impl SchemaBuilder {
 
 	pub fn register_server(&self, server: Server) {
 		self.servers.insert(server);
+	}
+
+	pub fn register_service(&self, service: Service) {
+		self.services.insert(service);
 	}
 }

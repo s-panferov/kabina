@@ -10,6 +10,7 @@ pub struct Jar(
 	crate::collection::Collection,
 	crate::collection::collection_files,
 	crate::server::Server,
+	crate::service::Service,
 	crate::transform::Transform,
 	crate::transform::transform_inputs,
 	crate::transform::transform_files,

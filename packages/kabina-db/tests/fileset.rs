@@ -24,6 +24,7 @@ fn test() {
 		Default::default(),
 		Default::default(),
 		Default::default(),
+		Default::default(),
 	);
 
 	let _ = kabina_db::file_group_files(&db, schema, files);

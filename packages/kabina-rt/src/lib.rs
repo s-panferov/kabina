@@ -15,6 +15,7 @@ mod collection;
 mod fileset;
 mod module;
 mod server;
+mod service;
 mod toolchain;
 mod transform;
 
@@ -31,6 +32,7 @@ impl DenoRuntime {
 			.ops(vec![transform::transform::decl()])
 			.ops(vec![collection::collection::decl()])
 			.ops(vec![server::server::decl()])
+			.ops(vec![service::service::decl()])
 			.ops(vec![toolchain::toolchain::decl()])
 			.build();
 
@@ -98,6 +100,7 @@ impl Runtime for DenoRuntime {
 			builder.transforms,
 			builder.collections,
 			builder.servers,
+			builder.services,
 		)
 	}
 
