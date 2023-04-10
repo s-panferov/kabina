@@ -23,7 +23,7 @@ pub struct SqliteSchema {
 	pub url: Url,
 }
 
-pub fn sqlite_schema_add(c: &Connection, url: url::Url) -> anyhow::Result<()> {
+pub fn sqlite_schema_add(c: &Connection, url: &Url) -> anyhow::Result<()> {
 	c.execute("INSERT INTO schema_files (url) VALUES (?1);", params![url])?;
 	Ok(())
 }
@@ -37,7 +37,7 @@ pub fn sqlite_schema_all(c: &Connection) -> anyhow::Result<Vec<SqliteSchema>> {
 	Ok(schemas.collect())
 }
 
-pub fn sqlite_schema_remove(c: &Connection, url: url::Url) -> anyhow::Result<()> {
+pub fn sqlite_schema_remove(c: &Connection, url: &Url) -> anyhow::Result<()> {
 	let res = c.execute("DELETE FROM schema_files WHERE url = ?1;", params![url])?;
 	assert!(res > 0);
 	Ok(())
@@ -60,12 +60,12 @@ mod tests {
 	fn test_sqlite_schema_add() -> Result<(), anyhow::Error> {
 		let c = sqlite_setup().unwrap();
 		let url = Url::from_file_path(PathBuf::from("/test/a.ts")).unwrap();
-		sqlite_schema_add(&c, url.clone())?;
+		sqlite_schema_add(&c, &url)?;
 
 		let schemas = sqlite_schema_all(&c)?;
 		assert_eq!(schemas[0].url, url);
 
-		sqlite_schema_remove(&c, url.clone())?;
+		sqlite_schema_remove(&c, &url)?;
 
 		Ok(())
 	}

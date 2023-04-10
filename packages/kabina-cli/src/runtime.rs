@@ -2,14 +2,19 @@ use std::collections::HashMap;
 use std::thread::JoinHandle;
 
 use kabina_db::runtime::Runtime;
-use kabina_db::SharedDatabase;
+use kabina_db::{Schema, SharedDatabase};
 use kabina_rt::DenoRuntime;
 use tokio::sync::mpsc::{channel, Sender};
+use tokio::sync::oneshot;
 use url::Url;
 
 pub struct RuntimeChannel {
 	handle: JoinHandle<()>,
-	sender: Sender<()>,
+	sender: Sender<RuntimeMessage>,
+}
+
+pub enum RuntimeMessage {
+	Schema(oneshot::Sender<Schema>),
 }
 
 #[derive(Default)]
@@ -18,12 +23,12 @@ pub struct RuntimeManager {
 }
 
 impl RuntimeManager {
-	pub fn spawn(&mut self, db: SharedDatabase, url: Url) -> Sender<()> {
+	pub fn spawn(&mut self, db: SharedDatabase, url: Url) -> Sender<RuntimeMessage> {
 		if let Some(cx) = self.runtimes.get(&url) {
 			return cx.sender.clone();
 		}
 
-		let (sender, mut rx) = channel(10);
+		let (sender, mut rx) = channel::<RuntimeMessage>(10);
 
 		let handle = std::thread::spawn({
 			let url = url.clone();
@@ -38,16 +43,26 @@ impl RuntimeManager {
 
 				while let Some(msg) = tokio_rt.block_on(rx.recv()) {
 					match msg {
-						_ => {}
+						RuntimeMessage::Schema(rx) => {
+							let _ = rx.send(schema);
+						}
 					}
 				}
+			}
+		});
+
+		let monitor = std::thread::spawn(move || match handle.join() {
+			Ok(_) => {}
+			Err(_) => {
+				tracing::error!("Runtime thread failed");
+				std::process::abort();
 			}
 		});
 
 		self.runtimes.insert(
 			url,
 			RuntimeChannel {
-				handle,
+				handle: monitor,
 				sender: sender.clone(),
 			},
 		);

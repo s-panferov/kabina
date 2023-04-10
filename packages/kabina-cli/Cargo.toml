@@ -20,4 +20,4 @@ futures = "*"
 tarpc = { version = "*", features=["full"] }
 anyhow="*"
 const-random="*"
-url="*"
+url={version="*", features=["serde"]}

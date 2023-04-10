@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use clap::Parser;
-use daemon::{daemon_client, daemon_start, runtime};
+use daemon::{daemon_client, daemon_start, tokio_runtime};
 use kabina_db::runtime::Runtime;
 use kabina_db::{
 	collection_files, Cause, Executable, ResolveRootFiles, RuntimeTask, SharedDatabase,
@@ -89,11 +89,17 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 		Command::Run { schema } => {
 			daemon_start()?;
-			let rt = runtime();
+			let rt = tokio_runtime();
 			rt.block_on(async {
 				let client = daemon_client().await?;
-				let url = url::Url::parse(&schema)
-					.unwrap_or_else(|_| url::Url::from_file_path(schema).unwrap());
+				let url = url::Url::parse(&schema).unwrap_or_else(|_| {
+					let mut path = PathBuf::from(schema);
+					if !path.is_absolute() {
+						path = path.canonicalize().unwrap()
+					}
+
+					url::Url::from_file_path(path).unwrap()
+				});
 
 				client.schema_run(current(), url).await?;
 				Ok(())

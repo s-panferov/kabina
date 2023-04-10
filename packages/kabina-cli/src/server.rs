@@ -37,7 +37,9 @@ impl Kabina for KabinaServer {
 	}
 
 	async fn schema_run(self, _: Context, url: Url) {
+		tracing::info!("[Method] Kabina::schema_run");
+
 		let mut rtm = self.state.rtm.lock();
-		let sender = rtm.spawn(self.state.database.clone(), url);
+		let _ = rtm.spawn(self.state.database.clone(), url);
 	}
 }

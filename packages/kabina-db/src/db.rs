@@ -31,6 +31,7 @@ pub struct Jar(
 
 pub trait Db: salsa::DbWithJar<Jar> {}
 
+use dashmap::DashMap;
 use parking_lot::Mutex;
 use rusqlite::Connection;
 pub use salsa::debug::DebugWithDb;
@@ -43,6 +44,7 @@ use crate::Schema;
 #[salsa::db(Jar)]
 pub struct Database {
 	sqlite: Arc<Mutex<Connection>>,
+	schemas: DashMap<Url, Schema>,
 	storage: salsa::Storage<Self>,
 }
 
@@ -52,15 +54,16 @@ impl Database {
 		let storage = Default::default();
 		Self {
 			storage,
+			schemas: DashMap::default(),
 			sqlite: Arc::new(Mutex::new(sqlite)),
 		}
 	}
 
-	// pub fn schema_load_all(&self) -> Result<(), anyhow::Error> {}
-
-	pub fn schema_add(&self, url: Url) -> Result<(), anyhow::Error> {
-		let schema = self.sqlite.lock();
-		sqlite_schema_add(&schema, url)
+	pub fn schema_add(&self, url: Url, schema: Schema) -> Result<(), anyhow::Error> {
+		let c = self.sqlite.lock();
+		sqlite_schema_add(&c, &url)?;
+		self.schemas.insert(url, schema);
+		Ok(())
 	}
 }
 
@@ -79,6 +82,7 @@ impl salsa::ParallelDatabase for Database {
 		salsa::Snapshot::new(Database {
 			sqlite: self.sqlite.clone(),
 			storage: self.storage.snapshot(),
+			schemas: DashMap::new(),
 		})
 	}
 }
