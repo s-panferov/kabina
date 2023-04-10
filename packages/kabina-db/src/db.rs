@@ -31,21 +31,36 @@ pub struct Jar(
 
 pub trait Db: salsa::DbWithJar<Jar> {}
 
-use parking_lot::RwLock;
+use parking_lot::Mutex;
+use rusqlite::Connection;
 pub use salsa::debug::DebugWithDb;
 pub use salsa::AsId;
+use url::Url;
 
+use crate::sqlite::sqlite_schema_add;
 use crate::Schema;
 
 #[salsa::db(Jar)]
 pub struct Database {
+    sqlite: Arc<Mutex<Connection>>,
     storage: salsa::Storage<Self>,
 }
 
 impl Database {
     pub fn new() -> Self {
+        let sqlite = crate::sqlite::sqlite_setup().unwrap();
         let storage = Default::default();
-        Self { storage }
+        Self {
+            storage,
+            sqlite: Arc::new(Mutex::new(sqlite)),
+        }
+    }
+
+    // pub fn schema_load_all(&self) -> Result<(), anyhow::Error> {}
+
+    pub fn schema_add(&self, url: Url) -> Result<(), anyhow::Error> {
+        let schema = self.sqlite.lock();
+        sqlite_schema_add(&schema, url)
     }
 }
 
@@ -62,6 +77,7 @@ impl salsa::Database for Database {}
 impl salsa::ParallelDatabase for Database {
     fn snapshot(&self) -> salsa::Snapshot<Self> {
         salsa::Snapshot::new(Database {
+            sqlite: self.sqlite.clone(),
             storage: self.storage.snapshot(),
         })
     }
@@ -72,4 +88,4 @@ struct Diagnostic(String);
 
 impl Diagnostic {}
 
-pub type SharedDatabase = Arc<RwLock<Database>>;
+pub type SharedDatabase = Arc<Mutex<Database>>;

@@ -16,7 +16,7 @@ pub fn server(state: &mut OpState, s: JsServer) -> Result<f64, deno_core::error:
     let db = state.borrow::<SharedDatabase>();
     let schema = state.borrow::<Arc<SchemaBuilder>>();
 
-    let handle = Server::new(&*db.read(), s.name);
+    let handle = Server::new(&*db.lock(), s.name);
 
     schema.register_server(handle);
 

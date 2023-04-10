@@ -45,7 +45,7 @@ pub fn transform(state: &mut OpState, f: JsTransform) -> Result<f64, deno_core::
     let schema = state.borrow::<Arc<SchemaBuilder>>();
 
     let handle = Transform::new(
-        &*db.read(),
+        &*db.lock(),
         f.name,
         RunnerKind::JsFunction(f.runner),
         f.input,

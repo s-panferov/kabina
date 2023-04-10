@@ -1,9 +1,9 @@
 #![feature(async_fn_in_trait)]
 
-use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use deno_core::url::Url;
 use deno_core::v8;
 use deno_core::v8::HandleScope;
 use deno_core::v8::Local;
@@ -17,7 +17,6 @@ use kabina_db::Schema;
 use kabina_db::SchemaBuilder;
 use kabina_db::SharedDatabase;
 use module::KabinaModuleLoader;
-use module::RUNTIME;
 use serde::Serialize;
 
 mod collection;
@@ -72,12 +71,11 @@ impl DenoRuntime {
 }
 
 impl Runtime for DenoRuntime {
-    async fn load_schema(&mut self, schema_path: PathBuf) -> Schema {
+    async fn load_schema(&mut self, url: Url) -> Schema {
         let schema = Arc::new(SchemaBuilder::default());
         self.runtime.op_state().borrow_mut().put(schema);
 
-        let url = deno_core::url::Url::from_file_path(&schema_path).unwrap();
-        let source = tokio::fs::read_to_string(schema_path).await.unwrap();
+        let source = tokio::fs::read_to_string(url.path()).await.unwrap();
         let module = self
             .runtime
             .load_main_module(
@@ -103,7 +101,7 @@ impl Runtime for DenoRuntime {
         };
 
         Schema::new(
-            &*self.db.read(),
+            &*self.db.lock(),
             builder.file_groups,
             builder.transforms,
             builder.collections,
@@ -142,7 +140,7 @@ impl Runtime for DenoRuntime {
             filePath: String,
         }
 
-        let db = self.db.read();
+        let db = self.db.lock();
 
         let deps_v8 = deno_core::serde_v8::to_v8(&mut scope, &*task.dependencies).unwrap();
         let context = deno_core::serde_v8::to_v8(

@@ -18,3 +18,7 @@ downcast-rs = "1.2.0"
 anyhow = "1.0.70"
 thiserror = "1.0.40"
 parking_lot = "0.12.1"
+rusqlite = { version = "*", features = ["bundled", "uuid", "serde_json", "url", "chrono", "blob"] }
+rusqlite_migration="*"
+lazy_static='*'
+url="*"

@@ -26,7 +26,7 @@ pub fn collection(state: &mut OpState, b: JsCollection) -> Result<f64, deno_core
     let schema = state.borrow::<Arc<SchemaBuilder>>();
 
     let handle = Collection::new(
-        &*db.read(),
+        &*db.lock(),
         b.name,
         b.items
             .into_iter()

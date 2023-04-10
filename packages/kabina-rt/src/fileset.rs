@@ -50,7 +50,7 @@ pub fn file_group(state: &mut OpState, f: JsFileGroup) -> Result<f64, deno_core:
     let schema = state.borrow::<Arc<SchemaBuilder>>();
 
     let handle = kabina_db::FileGroup::new(
-        &*db.read(),
+        &*db.lock(),
         f.name,
         root,
         f.items

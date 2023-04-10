@@ -16,7 +16,7 @@ pub fn toolchain(state: &mut OpState, f: JsToolchain) -> Result<f64, deno_core::
     let db = state.borrow::<SharedDatabase>();
     // let schema = state.borrow::<Arc<SchemaBuilder>>();
 
-    let handle = Toolchain::new(&*db.read(), f.name, f.binary, f.runner);
+    let handle = Toolchain::new(&*db.lock(), f.name, f.binary, f.runner);
 
     // schema.register_transform(handle);
 

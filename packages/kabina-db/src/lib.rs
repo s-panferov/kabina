@@ -9,6 +9,7 @@ mod fileset;
 pub mod runtime;
 mod schema;
 mod server;
+mod sqlite;
 mod toolchain;
 mod transform;
 
