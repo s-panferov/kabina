@@ -6,19 +6,19 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct JsServer {
-    name: String,
+	name: String,
 }
 
 #[op]
 pub fn server(state: &mut OpState, s: JsServer) -> Result<f64, deno_core::error::AnyError> {
-    tracing::info!("Server {:?} created", s.name);
+	tracing::info!("Server {:?} created", s.name);
 
-    let db = state.borrow::<SharedDatabase>();
-    let schema = state.borrow::<Arc<SchemaBuilder>>();
+	let db = state.borrow::<SharedDatabase>();
+	let schema = state.borrow::<Arc<SchemaBuilder>>();
 
-    let handle = Server::new(&*db.lock(), s.name);
+	let handle = Server::new(&*db.lock(), s.name);
 
-    schema.register_server(handle);
+	schema.register_server(handle);
 
-    Ok(usize::from(kabina_db::AsId::as_id(handle)) as f64)
+	Ok(usize::from(kabina_db::AsId::as_id(handle)) as f64)
 }

@@ -1,109 +1,110 @@
 #![feature(decl_macro)]
 
-use std::{path::PathBuf, sync::Arc};
+use std::path::PathBuf;
+use std::sync::Arc;
 
 use clap::Parser;
 use daemon::{daemon_client, daemon_start, runtime};
+use kabina_db::runtime::Runtime;
 use kabina_db::{
-    collection_files, runtime::Runtime, Cause, Executable, ResolveRootFiles, RuntimeTask,
-    SharedDatabase, ToolchainObject, ToolchainResolve, TransformApply,
+	collection_files, Cause, Executable, ResolveRootFiles, RuntimeTask, SharedDatabase,
+	ToolchainObject, ToolchainResolve, TransformApply,
 };
-
 use kabina_rt::DenoRuntime;
 use parking_lot::Mutex;
 use tarpc::context::current;
 use url::Url;
 
 mod daemon;
-mod server;
 mod runtime;
+mod server;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 enum Command {
-    Build {
-        #[arg(long)]
-        schema: PathBuf,
-        #[arg(long)]
-        collection: String,
-    },
-    Run {
-        #[arg(index = 1)]
-        schema: String,
-    },
-    #[clap(subcommand)]
-    Daemon(Daemon),
+	Build {
+		#[arg(long)]
+		schema: PathBuf,
+		#[arg(long)]
+		collection: String,
+	},
+	Run {
+		#[arg(index = 1)]
+		schema: String,
+	},
+	#[clap(subcommand)]
+	Daemon(Daemon),
 }
 
 #[derive(clap::Parser, Debug)]
 enum Daemon {
-    Start {},
-    Stop {},
-    Restart {},
+	Start {},
+	Stop {},
+	Restart {},
 }
 
 fn main() -> Result<(), anyhow::Error> {
-    let args = Command::parse();
+	let args = Command::parse();
 
-    tracing_subscriber::fmt::init();
+	tracing_subscriber::fmt::init();
 
-    match args {
-        Command::Build {
-            mut schema,
-            collection: bundle,
-        } => {
-            let rt = tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()?;
+	match args {
+		Command::Build {
+			mut schema,
+			collection: bundle,
+		} => {
+			let rt = tokio::runtime::Builder::new_multi_thread()
+				.enable_all()
+				.build()?;
 
-            if schema.is_relative() {
-                schema = std::env::current_dir()?.join(schema)
-            }
+			if schema.is_relative() {
+				schema = std::env::current_dir()?.join(schema)
+			}
 
-            let db = Arc::new(Mutex::new(kabina_db::Database::new()));
+			let db = Arc::new(Mutex::new(kabina_db::Database::new()));
 
-            let mut deno_rt = Box::new(rt.block_on(DenoRuntime::new(db.clone())));
+			let mut deno_rt = Box::new(rt.block_on(DenoRuntime::new(db.clone())));
 
-            let file_url = Url::from_file_path(schema).unwrap();
-            
-            // Populating the schema from TS
-            let schema = rt.block_on(deno_rt.load_schema(file_url));
+			let file_url = Url::from_file_path(schema).unwrap();
 
-            let collection = {
-                let db = db.lock();
-                let collections = schema.collections(&*db);
-                let collection = collections
-                    .iter()
-                    .find(|b| (*b).name(&*db) == bundle)
-                    .unwrap()
-                    .clone();
+			// Populating the schema from TS
+			let schema = rt.block_on(deno_rt.load_schema(file_url));
 
-                collection
-            };
+			let collection = {
+				let db = db.lock();
+				let collections = schema.collections(&*db);
+				let collection = collections
+					.iter()
+					.find(|b| (*b).name(&*db) == bundle)
+					.unwrap()
+					.clone();
 
-            rt.block_on(drive!(deno_rt, collection_files(db, schema, collection)));
+				collection
+			};
 
-            Ok(())
-        }
-        Command::Run { schema } => {
-            daemon_start()?;
-            let rt = runtime();
-            rt.block_on(async {
-                let client = daemon_client().await?;
-                let url = url::Url::parse(&schema)
-                    .unwrap_or_else(|_| url::Url::from_file_path(schema).unwrap());
+			rt.block_on(drive!(deno_rt, collection_files(db, schema, collection)));
 
-                client.schema_run(current(), url).await?;
-                Ok(())
-            })
-        }
-        Command::Daemon(daemon) => match daemon {
-            Daemon::Start {} => daemon::daemon_start(),
-            Daemon::Stop {} => daemon::daemon_stop(),
-            Daemon::Restart {} => daemon::daemon_restart(),
-        },
-    }
+			Ok(())
+		}
+		Command::Run { schema } => {
+			daemon_start()?;
+			let rt = runtime();
+			rt.block_on(async {
+				let client = daemon_client().await?;
+				let url = url::Url::parse(&schema)
+					.unwrap_or_else(|_| url::Url::from_file_path(schema).unwrap());
+
+				client.schema_run(current(), url).await?;
+				Ok(())
+			})
+		}
+		Command::Daemon(daemon) => match daemon {
+			Daemon::Start {} => daemon::daemon_start(),
+			Daemon::Stop {} => daemon::daemon_stop(),
+			Daemon::Restart {} => daemon::daemon_restart(),
+		},
+	}
 }
 
 pub macro drive($rt:expr, $func:ident($db:expr, $($arg:expr),+)) {
@@ -130,18 +131,18 @@ pub macro drive($rt:expr, $func:ident($db:expr, $($arg:expr),+)) {
 }
 
 pub async fn drive_task(task: &dyn Executable, db: &SharedDatabase, rt: &mut Box<impl Runtime>) {
-    if let Some(task) = task.downcast_ref::<ResolveRootFiles>() {
-        task.resolve(&mut db.lock())
-    } else if let Some(task) = task.downcast_ref::<TransformApply>() {
-        rt.transform(task).await;
-    } else if let Some(task) = task.downcast_ref::<ToolchainResolve>() {
-        let binary = task.toolchain.binary(&*db.lock());
-        match which::which(&binary) {
-            Ok(path) => {
-                tracing::info!("[ToolchainResolve] Resolved {:?} to {:?}", binary, path);
-                task.resolve(&mut *db.lock(), Ok(ToolchainObject { binary: path }))
-            }
-            Err(e) => task.resolve(&mut *db.lock(), Err(Cause::from_err(e))),
-        }
-    }
+	if let Some(task) = task.downcast_ref::<ResolveRootFiles>() {
+		task.resolve(&mut db.lock())
+	} else if let Some(task) = task.downcast_ref::<TransformApply>() {
+		rt.transform(task).await;
+	} else if let Some(task) = task.downcast_ref::<ToolchainResolve>() {
+		let binary = task.toolchain.binary(&*db.lock());
+		match which::which(&binary) {
+			Ok(path) => {
+				tracing::info!("[ToolchainResolve] Resolved {:?} to {:?}", binary, path);
+				task.resolve(&mut *db.lock(), Ok(ToolchainObject { binary: path }))
+			}
+			Err(e) => task.resolve(&mut *db.lock(), Err(Cause::from_err(e))),
+		}
+	}
 }
