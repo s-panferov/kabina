@@ -1,18 +1,18 @@
 import type {
-  fileGroup as FileGroupFunc,
-  transform as TransformFunc,
+  binary as BinaryFunc,
+  BinaryConfig,
   collection as CollectionFunc,
-  server as ServerFunc,
-  toolchain as ToolchainFunc,
-  service as ServiceFunc,
-  FileGroupConfig,
-  TransformConfig,
-  FileGroup,
-  Transform,
   CollectionConfig,
+  FileGroup,
+  fileGroup as FileGroupFunc,
+  FileGroupConfig,
+  server as ServerFunc,
   ServerConfig,
-  ToolchainConfig,
-  ServiceConfig
+  service as ServiceFunc,
+  ServiceConfig,
+  Transform,
+  transform as TransformFunc,
+  TransformConfig,
 } from "kabina";
 
 declare interface Deno {
@@ -23,7 +23,7 @@ declare interface Deno {
       collection: (cfg: CollectionConfig) => number;
       server: (cfg: ServerConfig) => number;
       service: (cfg: ServiceConfig) => number;
-      toolchain: (cfg: ToolchainConfig) => number;
+      binary: (cfg: BinaryConfig) => number;
     };
   };
 }
@@ -60,7 +60,7 @@ export function getFile(this: Bind | any, stack: string) {
 }
 
 export const fileGroup: typeof FileGroupFunc = (
-  fileGroupConfig: FileGroupConfig & { module?: string }
+  fileGroupConfig: FileGroupConfig & { module?: string },
 ) => {
   fileGroupConfig.module = caller();
   const id: number = Deno.core.ops.file_group(fileGroupConfig);
@@ -89,7 +89,7 @@ const transforms: { [key: number]: Function } = {};
 export const __transforms = transforms;
 
 export const transform: typeof TransformFunc = <I, D, O>(
-  transformConfig: TransformConfig<I, D, O>
+  transformConfig: TransformConfig<I, D, O>,
 ) => {
   // const runnerId = runtimeFunctionsSeq++;
 
@@ -116,34 +116,33 @@ export const collection: typeof CollectionFunc = (config: CollectionConfig) => {
 
   return {
     kind: "Collection",
-    id
-  }
-}
+    id,
+  };
+};
 
 export const server: typeof ServerFunc = (config: ServerConfig) => {
   const id: number = Deno.core.ops.server(config);
 
   return {
     kind: "Server",
-    id
-  }
-}
+    id,
+  };
+};
 
-export const toolchain: typeof ToolchainFunc = (config: ToolchainConfig) => {
-  const id: number = Deno.core.ops.toolchain(config);
+export const binary: typeof BinaryFunc = (config: BinaryConfig) => {
+  const id: number = Deno.core.ops.binary(config);
 
   return {
-    kind: "Toolchain",
-    id
-  }
-}
-
+    kind: "Binary",
+    id,
+  };
+};
 
 export const service: typeof ServiceFunc = (config: ServiceConfig) => {
   const id: number = Deno.core.ops.service(config);
 
   return {
     kind: "Service",
-    id
-  }
-}
+    id,
+  };
+};

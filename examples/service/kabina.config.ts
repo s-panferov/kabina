@@ -1,9 +1,12 @@
-import { service } from 'kabina'
+import { binary, service } from "kabina";
 
 service({
   name: "PhotoFrame",
-  runtime: {
-    kind: 'binary',
-    executable: "true"
-  }
-})
+  binary: binary({
+    name: "PhotoFrame",
+    runtime: {
+      kind: "native",
+      executable: "true",
+    },
+  }),
+});

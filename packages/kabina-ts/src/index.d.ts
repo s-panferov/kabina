@@ -4,7 +4,7 @@ export * from './deps.d.ts'
 export * from './file.d.ts'
 export * from './job.d.ts'
 export * from './server.d.ts'
-export * from './toolchain.d.ts'
+export * from './binary.d.ts'
 export * from './transform.d.ts'
 export * from './service.d.ts'
 

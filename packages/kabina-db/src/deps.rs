@@ -4,7 +4,7 @@ use salsa::AsId;
 use serde::Serialize;
 use serde_json::{Map, Value};
 
-use crate::{FileGroup, Toolchain, ToolchainObject, Transform};
+use crate::{Binary, BinaryRuntimeResolved, FileGroup, Transform};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Input {
@@ -16,7 +16,7 @@ pub enum Input {
 pub enum Dependency {
 	FileGroup(FileGroup),
 	Transform(Transform),
-	Toolchain(Toolchain),
+	Toolchain(Binary),
 }
 
 impl Dependency {
@@ -31,7 +31,7 @@ impl Dependency {
 
 #[derive(Serialize)]
 pub enum ResolvedDependency {
-	Toolchain(ToolchainObject),
+	Binary(BinaryRuntimeResolved),
 }
 
 pub fn extract_dependencies_from_object(o: &Map<String, Value>, buffer: &mut Vec<Dependency>) {
@@ -43,7 +43,7 @@ pub fn extract_dependencies_from_object(o: &Map<String, Value>, buffer: &mut Vec
 			Dependency::Transform(Transform::from_id((id.as_u64().unwrap() as usize).into())),
 		),
 		(Some(kind), Some(id)) if kind.as_str() == Some("Toolchain") => buffer.push(
-			Dependency::Toolchain(Toolchain::from_id((id.as_u64().unwrap() as usize).into())),
+			Dependency::Toolchain(Binary::from_id((id.as_u64().unwrap() as usize).into())),
 		),
 		_ => o.values().for_each(|v| extract_dependencies(v, buffer)),
 	}
@@ -78,7 +78,7 @@ pub fn replace_dependencies_in_object(
 			Some(serde_json::to_value(&subst.get(&Dependency::Transform(t)).unwrap()).unwrap())
 		}
 		(Some(kind), Some(id)) if kind.as_str() == Some("Toolchain") => {
-			let t = Toolchain::from_id((id.as_u64().unwrap() as usize).into());
+			let t = Binary::from_id((id.as_u64().unwrap() as usize).into());
 			Some(serde_json::to_value(&subst.get(&Dependency::Toolchain(t)).unwrap()).unwrap())
 		}
 		_ => {

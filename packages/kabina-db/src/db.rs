@@ -25,9 +25,9 @@ pub struct Jar(
 	crate::fileset::root_file_groups,
 	crate::fileset::file_group_resolved_paths,
 	crate::fileset::file_group_files,
-	crate::toolchain::Toolchain,
+	crate::binary::Binary,
 	// crate::toolchain::ToolchainObject,
-	crate::toolchain::toolchain_resolve,
+	crate::binary::binary_resolve,
 );
 
 pub trait Db: salsa::DbWithJar<Jar> {}

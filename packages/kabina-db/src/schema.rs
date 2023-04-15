@@ -1,6 +1,6 @@
 use dashmap::DashSet;
 
-use crate::{Collection, FileGroup, Server, Service, Transform};
+use crate::{Binary, Collection, FileGroup, Server, Service, Transform};
 
 #[salsa::input]
 pub struct Schema {
@@ -18,6 +18,9 @@ pub struct Schema {
 
 	#[return_ref]
 	pub services: DashSet<Service>,
+
+	#[return_ref]
+	pub binaries: DashSet<Binary>,
 }
 
 #[derive(Default)]
@@ -27,6 +30,7 @@ pub struct SchemaBuilder {
 	pub collections: DashSet<Collection>,
 	pub servers: DashSet<Server>,
 	pub services: DashSet<Service>,
+	pub binaries: DashSet<Binary>,
 }
 
 impl SchemaBuilder {
@@ -48,5 +52,9 @@ impl SchemaBuilder {
 
 	pub fn register_service(&self, service: Service) {
 		self.services.insert(service);
+	}
+
+	pub fn register_binary(&self, binary: Binary) {
+		self.binaries.insert(binary);
 	}
 }

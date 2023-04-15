@@ -53,7 +53,9 @@ impl RuntimeManager {
 		});
 
 		let monitor = std::thread::spawn(move || match handle.join() {
-			Ok(_) => {}
+			Ok(_) => {
+				tracing::info!("Runtime thread completed");
+			}
 			Err(_) => {
 				tracing::error!("Runtime thread failed");
 				std::process::abort();

@@ -7,7 +7,7 @@ use crate::deps::{
 	extract_dependencies, replace_dependencies, Dependency, Input, ResolvedDependency,
 };
 use crate::{
-	file_group_files, toolchain_resolve, Cause, Db, Executable, File, Outcome, RuntimeTask, Schema,
+	binary_resolve, file_group_files, Cause, Db, Executable, File, Outcome, RuntimeTask, Schema,
 };
 
 #[derive(Debug, Clone)]
@@ -46,9 +46,9 @@ pub fn transform_dependencies(db: &dyn Db, transform: Transform) -> Outcome<Arc<
 
 	for dep in &buffer {
 		match dep {
-			Dependency::Toolchain(t) => match toolchain_resolve(db, *t) {
+			Dependency::Toolchain(t) => match binary_resolve(db, *t) {
 				Ok(t) => {
-					resolved.insert(*dep, ResolvedDependency::Toolchain(t));
+					resolved.insert(*dep, ResolvedDependency::Binary(t));
 				}
 				Err(c) => error = Err(c),
 			},

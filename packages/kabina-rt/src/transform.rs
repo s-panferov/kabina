@@ -3,7 +3,7 @@ use std::sync::Arc;
 use deno_core::serde_json::Value;
 use deno_core::{op, OpState};
 use kabina_db::deps::Dependency;
-use kabina_db::{AsId, FileGroup, RunnerKind, SchemaBuilder, SharedDatabase, Toolchain, Transform};
+use kabina_db::{AsId, Binary, FileGroup, RunnerKind, SchemaBuilder, SharedDatabase, Transform};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -27,7 +27,7 @@ pub fn map_js_dep(dep: JsDependency) -> Dependency {
 	match dep {
 		JsDependency::FileGroup { id } => Dependency::FileGroup(FileGroup::from_id(id.into())),
 		JsDependency::Transform { id } => Dependency::Transform(Transform::from_id(id.into())),
-		JsDependency::Toolchain { id } => Dependency::Toolchain(Toolchain::from_id(id.into())),
+		JsDependency::Toolchain { id } => Dependency::Toolchain(Binary::from_id(id.into())),
 	}
 }
 

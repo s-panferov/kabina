@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 
-use tokio::process::{Child, Command};
+use tokio::process::Command;
 
 #[derive(Default)]
 pub struct ProcessMananger {
@@ -10,7 +11,7 @@ pub struct ProcessMananger {
 
 impl ProcessMananger {
 	pub fn spawn(&mut self, id: usize, config: ProcessConfig) -> Arc<Process> {
-		tracing::info!("Spawning a process: {}", config.executable);
+		tracing::info!("Spawning a process: {:?}", config.executable);
 		let process = Arc::new(Process::new(config));
 		self.running.insert(id, process.clone());
 		process
@@ -18,18 +19,23 @@ impl ProcessMananger {
 }
 
 pub struct ProcessConfig {
-	pub executable: String,
+	pub executable: PathBuf,
 }
 
 pub struct Process {
-	pub child: Child,
 	pub config: ProcessConfig,
 }
 
 impl Process {
 	pub fn new(config: ProcessConfig) -> Process {
 		let mut command = Command::new(&config.executable);
-		let child = command.spawn().unwrap();
-		Process { child, config }
+		let mut child = command.spawn().unwrap();
+		let _stdin = child.stdin.take();
+		tokio::spawn(async move {
+			let res = child.wait().await;
+			tracing::info!("Process completed with exit code {:?}", res)
+		});
+
+		Process { config }
 	}
 }

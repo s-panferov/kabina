@@ -11,12 +11,12 @@ use kabina_db::{AsId, Schema, SchemaBuilder, SharedDatabase};
 use module::KabinaModuleLoader;
 use serde::Serialize;
 
+mod binary;
 mod collection;
 mod fileset;
 mod module;
 mod server;
 mod service;
-mod toolchain;
 mod transform;
 
 pub struct DenoRuntime {
@@ -33,7 +33,7 @@ impl DenoRuntime {
 			.ops(vec![collection::collection::decl()])
 			.ops(vec![server::server::decl()])
 			.ops(vec![service::service::decl()])
-			.ops(vec![toolchain::toolchain::decl()])
+			.ops(vec![binary::binary::decl()])
 			.build();
 
 		let loader = Rc::new(KabinaModuleLoader);
@@ -101,6 +101,7 @@ impl Runtime for DenoRuntime {
 			builder.collections,
 			builder.servers,
 			builder.services,
+			builder.binaries,
 		)
 	}
 

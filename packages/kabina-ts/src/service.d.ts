@@ -1,7 +1,8 @@
+import { Binary } from "./binary.d.ts"
 
 export interface ServiceConfig {
   name: string
-  runtime: ServiceRuntime
+  binary: Binary
 }
 
 export interface Service {
@@ -9,10 +10,3 @@ export interface Service {
 }
 
 export function service(config: ServiceConfig): Service;
-
-export type ServiceRuntime = BinaryRuntime 
-
-export interface BinaryRuntime {
-  kind: 'binary',
-  executable: string
-}

@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
-use kabina_db::{AsId, ServiceRuntime, SharedDatabase};
+use kabina_db::{binary_resolve, AsId, BinaryRuntimeResolved, SharedDatabase};
 use kabina_rpc::Kabina;
 use parking_lot::Mutex;
 use tarpc::context::Context;
 use tokio::sync::oneshot;
 use url::Url;
 
+use crate::drive::drive;
 use crate::process::{ProcessConfig, ProcessMananger};
 use crate::runtime::{RuntimeManager, RuntimeMessage};
 
@@ -42,7 +43,7 @@ impl Kabina for KabinaServer {
 	async fn schema_run(self, _: Context, url: Url) {
 		tracing::info!("[Method] Kabina::schema_run");
 
-		let channel = {
+		let mut channel = {
 			let mut rtm = self.state.rtm.lock();
 			rtm.spawn(self.state.database.clone(), url)
 		};
@@ -53,19 +54,33 @@ impl Kabina for KabinaServer {
 			rx.await.unwrap()
 		};
 
-		let db = self.state.database.lock();
-		let services = schema.services(&*db);
+		let db = &self.state.database;
+		let services = schema.services(&*db.lock()).clone();
 
-		let mut proc = self.state.process.lock();
 		for service in services.iter() {
-			let runtime = service.runtime(&*db);
-			let ServiceRuntime::Binary(b) = runtime;
-			proc.spawn(
-				service.as_id().into(),
-				ProcessConfig {
-					executable: b.executable,
-				},
-			);
+			tracing::info!("Running service: {}", service.name(&*db.lock()));
+
+			let binary = service.binary(&*db.lock());
+
+			tracing::info!("Resolving binary");
+
+			{
+				assert!(db.try_lock().is_some());
+			}
+
+			let binary = drive!(channel, binary_resolve(self.state.database, binary)).await;
+
+			match binary {
+				BinaryRuntimeResolved::Native { executable } => {
+					tracing::info!("Spawning executable: {:?}", executable);
+					self.state.process.lock().spawn(
+						service.as_id().into(),
+						ProcessConfig {
+							executable: executable,
+						},
+					);
+				}
+			}
 		}
 	}
 }
