@@ -25,9 +25,11 @@ pub struct DenoRuntime {
 	std: usize,
 }
 
+deno_core::extension!(kabina_main, esm = ["js/bootstrap.js",]);
+
 impl DenoRuntime {
 	pub async fn new(db: SharedDatabase) -> Self {
-		let ext = Extension::builder("runtime")
+		let ext = Extension::builder("kabina")
 			.ops(vec![fileset::file_group::decl()])
 			.ops(vec![transform::transform::decl()])
 			.ops(vec![collection::collection::decl()])
@@ -41,7 +43,13 @@ impl DenoRuntime {
 		// Initialize a runtime instance
 		let mut runtime = JsRuntime::new(RuntimeOptions {
 			module_loader: Some(loader.clone()),
-			extensions: vec![ext],
+			extensions: vec![
+				deno_webidl::deno_webidl::init_ops_and_esm(),
+				deno_console::deno_console::init_ops_and_esm(),
+				deno_url::deno_url::init_ops_and_esm(),
+				ext,
+				kabina_main::init_ops_and_esm(),
+			],
 			..Default::default()
 		});
 
@@ -74,7 +82,7 @@ impl Runtime for DenoRuntime {
 			.runtime
 			.load_main_module(
 				&url,
-				Some(deno_core::ModuleCode::Owned(source.into_bytes())),
+				Some(deno_core::ModuleCode::Owned(source.into_boxed_str())),
 			)
 			.await
 			.unwrap();

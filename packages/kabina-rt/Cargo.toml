@@ -5,12 +5,16 @@ name = "kabina-rt"
 version = "0.0.4"
 
 [dependencies]
-deno_core= "0.179.0"
-deno_ast={ version = "0.25.0", features = ["transpiling"] }
-anyhow= "1.0.70"
-futures= "0.3.28"
-serde= "1.0.159"
-tracing= "0.1.37"
-tokio={ version = "1.27.0", features = ["full"] }
-kabina-db={path="../kabina-db"}
-parking_lot= "0.12.1"
+deno_core = "0.180.0"
+deno_ast = { version = "0.25.0", features = ["transpiling"] }
+deno_url = "*"
+deno_webidl = "*"
+deno_console = "*"
+anyhow = "1.0.70"
+futures = "0.3.28"
+serde = "1.0.160"
+tracing = "0.1.37"
+tokio = { version = "1.27.0", features = ["full"] }
+kabina-db = { path = "../kabina-db" }
+parking_lot = "0.12.1"
+reqwest="*"

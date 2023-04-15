@@ -20,6 +20,8 @@ impl ProcessMananger {
 
 pub struct ProcessConfig {
 	pub executable: PathBuf,
+	pub env: BTreeMap<String, String>,
+	pub args: Vec<String>,
 }
 
 pub struct Process {
@@ -29,6 +31,8 @@ pub struct Process {
 impl Process {
 	pub fn new(config: ProcessConfig) -> Process {
 		let mut command = Command::new(&config.executable);
+		command.args(config.args.iter());
+		command.envs(config.env.iter());
 		let mut child = command.spawn().unwrap();
 		let _stdin = child.stdin.take();
 		tokio::spawn(async move {

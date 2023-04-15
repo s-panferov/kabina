@@ -5,7 +5,7 @@ name = "kabina-cli"
 version = "0.0.4"
 
 [dependencies]
-clap = { version = "4.2.1", features = ["derive"] }
+clap = { version = "4.2.2", features = ["derive"] }
 kabina-rt = { path = "../kabina-rt" }
 kabina-db = { path = "../kabina-db" }
 kabina-rpc = { path = "../kabina-rpc" }

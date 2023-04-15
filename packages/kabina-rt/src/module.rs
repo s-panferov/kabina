@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::pin::Pin;
 use std::str::FromStr;
 
@@ -37,15 +38,22 @@ impl ModuleLoader for KabinaModuleLoader {
 	fn load(
 		&self,
 		module_specifier: &ModuleSpecifier,
-		_maybe_referrer: Option<ModuleSpecifier>,
+		_maybe_referrer: Option<&ModuleSpecifier>,
 		_is_dyn_import: bool,
 	) -> Pin<Box<ModuleSourceFuture>> {
 		let module_specifier = module_specifier.clone();
 
 		async move {
-			let path = module_specifier
-				.to_file_path()
-				.map_err(|_| anyhow!("Only file: URLs are supported."))?;
+			tracing::info!("Resoling {:?}", module_specifier);
+
+			// match module_specifier.domain() {
+			// 	None => {}
+			// 	Some(_) => {
+			// 		let module = reqwest::get(module_specifier).await?.text();
+			// 	}
+			// }
+
+			let path = Path::new(module_specifier.path());
 
 			let media_type = MediaType::from_path(&path);
 			let (module_type, should_transpile) = match media_type {
@@ -64,10 +72,24 @@ impl ModuleLoader for KabinaModuleLoader {
 				_ => bail!("Unknown extension {:?}", path.extension()),
 			};
 
-			let code = if module_specifier.as_str() == RUNTIME_URL {
-				RUNTIME.to_owned()
-			} else {
-				tokio::fs::read_to_string(&path).await?
+			let code = match module_specifier.scheme() {
+				"kabina" => {
+					if module_specifier.as_str() == RUNTIME_URL {
+						RUNTIME.to_owned()
+					} else {
+						unimplemented!()
+					}
+				}
+				"https" => {
+					tracing::info!("Downloading module {}", module_specifier);
+					reqwest::get(module_specifier.clone()).await?.text().await?
+				}
+				_ => {
+					let path = module_specifier
+						.to_file_path()
+						.map_err(|_| anyhow!("Only file: URLs are supported."))?;
+					tokio::fs::read_to_string(&path).await?
+				}
 			};
 
 			let code = if should_transpile {
@@ -84,12 +106,11 @@ impl ModuleLoader for KabinaModuleLoader {
 				code
 			};
 
-			let module = ModuleSource {
-				code: ModuleCode::Owned(code.into_bytes()),
+			let module = ModuleSource::new(
 				module_type,
-				module_url_specified: module_specifier.to_string(),
-				module_url_found: module_specifier.to_string(),
-			};
+				ModuleCode::Owned(code.into_boxed_str()),
+				&module_specifier,
+			);
 
 			Ok(module)
 		}

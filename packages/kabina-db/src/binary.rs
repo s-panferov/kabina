@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -20,11 +21,17 @@ pub enum BinaryRuntime {
 #[derive(Debug, Clone)]
 pub struct BinaryNative {
 	pub executable: String,
+	pub env: BTreeMap<String, String>,
+	pub args: Vec<String>,
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
 pub enum BinaryRuntimeResolved {
-	Native { executable: PathBuf },
+	Native {
+		executable: PathBuf,
+		env: BTreeMap<String, String>,
+		args: Vec<String>,
+	},
 }
 
 #[salsa::tracked]

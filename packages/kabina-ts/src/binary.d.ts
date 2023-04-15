@@ -1,22 +1,23 @@
-
 export interface Binary {
-  kind: 'Binary'
+  kind: "Binary";
 }
 
 export interface BinaryConfig {
-  name: string,
-  runtime: BinaryRuntime
+  name: string;
+  runtime: BinaryRuntime;
 }
 
-export type BinaryRuntime = BinaryNative 
+export type BinaryRuntime = BinaryNative;
 
 export interface BinaryNative {
-  kind: 'native',
-  executable: string
+  kind: "native";
+  executable: string;
+  env?: { [key: string]: string };
+  arguments?: string[];
 }
 
 export interface BinaryRunner {
-  invoke(arguments: string[]): void
+  invoke(arguments: string[]): void;
 }
 
 export function binary(config: BinaryConfig): Binary;

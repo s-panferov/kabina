@@ -72,7 +72,11 @@ pub async fn drive_task(
 				);
 				task.resolve(
 					&mut *db.lock(),
-					Ok(BinaryRuntimeResolved::Native { executable: path }),
+					Ok(BinaryRuntimeResolved::Native {
+						executable: path,
+						args: b.args,
+						env: b.env,
+					}),
 				)
 			}
 			Err(e) => task.resolve(&mut *db.lock(), Err(Cause::from_err(e))),

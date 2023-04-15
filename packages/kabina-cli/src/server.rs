@@ -69,15 +69,22 @@ impl Kabina for KabinaServer {
 				assert!(db.try_lock().is_some());
 			}
 
-			let binary = drive!(channel, binary_resolve(self.state.database, schema, binary)).await;
+			let binary_meta =
+				drive!(channel, binary_resolve(self.state.database, schema, binary)).await;
 
-			match binary {
-				BinaryRuntimeResolved::Native { executable } => {
+			match binary_meta {
+				BinaryRuntimeResolved::Native {
+					executable,
+					env,
+					args,
+				} => {
 					tracing::info!("Spawning executable: {:?}", executable);
 					self.state.process.lock().spawn(
 						service.as_id().into(),
 						ProcessConfig {
-							executable: executable,
+							executable,
+							env,
+							args,
 						},
 					);
 				}

@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use deno_core::{op, OpState};
 use kabina_db::{Binary, BinaryNative, BinaryRuntime, SharedDatabase};
 use serde::Deserialize;
@@ -18,6 +20,10 @@ pub enum JsBinaryRuntime {
 #[derive(Deserialize)]
 pub struct JsBinaryNative {
 	pub executable: String,
+	#[serde(default)]
+	pub env: BTreeMap<String, String>,
+	#[serde(default)]
+	pub args: Vec<String>,
 }
 
 #[op]
@@ -33,6 +39,8 @@ pub fn binary(state: &mut OpState, b: JsBinary) -> Result<f64, deno_core::error:
 		match b.runtime {
 			JsBinaryRuntime::Native(b) => BinaryRuntime::Native(BinaryNative {
 				executable: b.executable,
+				env: b.env,
+				args: b.args,
 			}),
 		},
 	);

@@ -1,0 +1,13 @@
+layout {
+    pane split_direction="vertical" {
+      pane
+      pane {
+        command "tail"
+        args "-f" "/tmp/kabina.out"
+      }
+      pane {
+        command "tail"
+        args "-f" "/tmp/kabina.err"
+      }
+    }
+}
