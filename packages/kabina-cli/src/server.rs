@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use kabina_db::{binary_resolve, AsId, BinaryRuntimeResolved, SharedDatabase};
-use kabina_rpc::Kabina;
+use kabina_rpc::{Kabina, KabinaObserverClient};
 use parking_lot::Mutex;
-use tarpc::context::Context;
+use tarpc::context::{current, Context};
 use tokio::sync::oneshot;
 use url::Url;
 
@@ -22,6 +22,7 @@ pub struct KabinaState {
 
 #[derive(Clone)]
 pub struct KabinaServer {
+	pub peer: KabinaObserverClient,
 	pub state: KabinaState,
 }
 
@@ -82,5 +83,10 @@ impl Kabina for KabinaServer {
 				}
 			}
 		}
+
+		self.peer
+			.log(current(), "FINISH EXECUTION".into())
+			.await
+			.unwrap();
 	}
 }

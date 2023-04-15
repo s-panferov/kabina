@@ -7,3 +7,8 @@ pub trait Kabina {
 	async fn schema_run(url: Url);
 	async fn terminate();
 }
+
+#[tarpc::service]
+pub trait KabinaObserver {
+	async fn log(name: String);
+}

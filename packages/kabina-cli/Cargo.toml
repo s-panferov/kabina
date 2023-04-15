@@ -21,3 +21,5 @@ tarpc = { version = "*", features=["full"] }
 anyhow="*"
 const-random="*"
 url={version="*", features=["serde"]}
+thiserror="*"
+serde={version = "*", features=["derive"]}
