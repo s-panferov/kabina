@@ -96,6 +96,7 @@ impl Runtime for DenoRuntime {
 
 		Schema::new(
 			&*self.db.lock(),
+			url,
 			builder.file_groups,
 			builder.transforms,
 			builder.collections,

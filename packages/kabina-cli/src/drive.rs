@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use kabina_db::{
 	BinaryResolve, BinaryRuntime, BinaryRuntimeResolved, Cause, Executable, ResolveRootFiles,
 	RuntimeTask, SharedDatabase, TransformApply,
@@ -42,16 +44,26 @@ pub macro drive($rt:expr, $func:ident($db:expr, $($arg:expr),+)) {
 pub async fn drive_task(
 	task: &dyn Executable,
 	db: &SharedDatabase,
-	rt: &mut Sender<RuntimeMessage>,
+	_rt: &mut Sender<RuntimeMessage>,
 ) {
 	if let Some(task) = task.downcast_ref::<ResolveRootFiles>() {
 		task.resolve(&mut db.lock())
-	} else if let Some(task) = task.downcast_ref::<TransformApply>() {
+	} else if let Some(_task) = task.downcast_ref::<TransformApply>() {
 		unimplemented!()
 	} else if let Some(task) = task.downcast_ref::<BinaryResolve>() {
 		let runtime = task.binary.runtime(&*db.lock());
 		let BinaryRuntime::Native(b) = runtime;
-		match which::which(&b.executable) {
+		let url = task.schema.url(&*db.lock());
+		let path = PathBuf::from(url.path());
+		let path = path.parent().unwrap();
+
+		tracing::info!("Resolving binary {} in {}", b.executable, url.path());
+
+		match which::WhichConfig::new()
+			.binary_name(b.executable.clone().into())
+			.custom_cwd(path.to_owned())
+			.first_result()
+		{
 			Ok(path) => {
 				tracing::info!(
 					"[ToolchainResolve] Resolved {:?} to {:?}",

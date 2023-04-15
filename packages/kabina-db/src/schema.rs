@@ -1,9 +1,12 @@
 use dashmap::DashSet;
+use url::Url;
 
 use crate::{Binary, Collection, FileGroup, Server, Service, Transform};
 
 #[salsa::input]
 pub struct Schema {
+	pub url: Url,
+
 	#[return_ref]
 	pub file_groups: DashSet<FileGroup>,
 

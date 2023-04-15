@@ -68,7 +68,7 @@ impl Kabina for KabinaServer {
 				assert!(db.try_lock().is_some());
 			}
 
-			let binary = drive!(channel, binary_resolve(self.state.database, binary)).await;
+			let binary = drive!(channel, binary_resolve(self.state.database, schema, binary)).await;
 
 			match binary {
 				BinaryRuntimeResolved::Native { executable } => {

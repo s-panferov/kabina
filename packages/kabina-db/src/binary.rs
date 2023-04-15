@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use serde::Serialize;
 
-use crate::{Cause, Db, Executable, Outcome, RuntimeTask};
+use crate::{Cause, Db, Executable, Outcome, RuntimeTask, Schema};
 
 #[salsa::input]
 #[derive(Debug, Clone)]
@@ -22,25 +22,30 @@ pub struct BinaryNative {
 	pub executable: String,
 }
 
-pub struct BinaryResolve {
-	pub binary: Binary,
-}
-
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
 pub enum BinaryRuntimeResolved {
 	Native { executable: PathBuf },
 }
 
 #[salsa::tracked]
-pub fn binary_resolve(db: &dyn Db, binary: Binary) -> Outcome<BinaryRuntimeResolved> {
-	RuntimeTask::push(db, Arc::new(BinaryResolve { binary }));
+pub fn binary_resolve(
+	db: &dyn Db,
+	schema: Schema,
+	binary: Binary,
+) -> Outcome<BinaryRuntimeResolved> {
+	RuntimeTask::push(db, Arc::new(BinaryResolve { schema, binary }));
 	Outcome::Err(Cause::Pending)
+}
+
+pub struct BinaryResolve {
+	pub schema: Schema,
+	pub binary: Binary,
 }
 
 impl Executable for BinaryResolve {}
 
 impl BinaryResolve {
 	pub fn resolve(&self, db: &mut dyn Db, object: Outcome<BinaryRuntimeResolved>) {
-		binary_resolve::set(db, self.binary, object)
+		binary_resolve::set(db, self.schema, self.binary, object)
 	}
 }

@@ -36,7 +36,11 @@ pub fn transform_inputs(db: &dyn Db, transform: Transform) -> Vec<Input> {
 }
 
 #[salsa::tracked]
-pub fn transform_dependencies(db: &dyn Db, transform: Transform) -> Outcome<Arc<Value>> {
+pub fn transform_dependencies(
+	db: &dyn Db,
+	schema: Schema,
+	transform: Transform,
+) -> Outcome<Arc<Value>> {
 	let mut deps = transform.dependencies(db);
 	let mut buffer: Vec<Dependency> = Vec::new();
 	extract_dependencies(&deps, &mut buffer);
@@ -46,7 +50,7 @@ pub fn transform_dependencies(db: &dyn Db, transform: Transform) -> Outcome<Arc<
 
 	for dep in &buffer {
 		match dep {
-			Dependency::Toolchain(t) => match binary_resolve(db, *t) {
+			Dependency::Toolchain(t) => match binary_resolve(db, schema, *t) {
 				Ok(t) => {
 					resolved.insert(*dep, ResolvedDependency::Binary(t));
 				}
@@ -115,7 +119,7 @@ pub fn transform_result_for_file(
 	transform: Transform,
 	file: File,
 ) -> Outcome<File> {
-	let dependencies = transform_dependencies(db, transform)?;
+	let dependencies = transform_dependencies(db, schema, transform)?;
 
 	RuntimeTask::push(
 		db,

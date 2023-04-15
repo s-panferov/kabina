@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use kabina_db::{
 	self, FileGroup, FileGroupItem, FileGroupStategy, ResolveRootFiles, RuntimeTask, Schema,
 };
+use url::Url;
 
 #[test]
 fn test() {
@@ -20,6 +21,7 @@ fn test() {
 
 	let schema = Schema::new(
 		&db,
+		Url::from_file_path("/test").unwrap(),
 		[files].into_iter().collect(),
 		Default::default(),
 		Default::default(),
