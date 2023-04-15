@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use clap::Parser;
-use daemon::{daemon_client, daemon_start, tokio_runtime};
+use daemon::{daemon_client, daemon_start, tokio_current};
 use kabina_db::runtime::Runtime;
 use kabina_db::{
 	collection_files, Cause, Executable, ResolveRootFiles, RuntimeTask, SharedDatabase,
@@ -16,6 +16,7 @@ use tarpc::context::current;
 use url::Url;
 
 mod daemon;
+mod process;
 mod runtime;
 mod server;
 
@@ -89,7 +90,7 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 		Command::Run { schema } => {
 			daemon_start()?;
-			let rt = tokio_runtime();
+			let rt = tokio_current();
 			rt.block_on(async {
 				let client = daemon_client().await?;
 				let url = url::Url::parse(&schema).unwrap_or_else(|_| {

@@ -13,11 +13,19 @@ use tarpc::tokio_serde::formats::Bincode;
 use tokio::runtime::Runtime;
 use tokio::time::sleep;
 
+use crate::process::ProcessMananger;
 use crate::runtime::RuntimeManager;
 use crate::server::{KabinaServer, KabinaState, VERSION};
 
-pub fn tokio_runtime() -> Runtime {
+pub fn tokio_current() -> Runtime {
 	tokio::runtime::Builder::new_current_thread()
+		.enable_all()
+		.build()
+		.unwrap()
+}
+
+pub fn tokio_multi() -> Runtime {
+	tokio::runtime::Builder::new_multi_thread()
 		.enable_all()
 		.build()
 		.unwrap()
@@ -35,7 +43,7 @@ pub fn daemon_start() -> Result<(), anyhow::Error> {
 	match daemon.execute() {
 		daemonize::Outcome::Parent(r) => match r {
 			Ok(_p) => {
-				let rt = tokio_runtime();
+				let rt = tokio_current();
 				let restart = rt.block_on(async move {
 					// FIXME: wait until socket is created
 					sleep(Duration::from_millis(300)).await;
@@ -64,7 +72,7 @@ pub fn daemon_start() -> Result<(), anyhow::Error> {
 		daemonize::Outcome::Child(r) => match r {
 			Ok(_) => {
 				tracing::info!("Starting server");
-				let rt = tokio_runtime();
+				let rt = tokio_multi();
 				rt.block_on(daemon_server())
 			}
 			Err(e) => panic!("Failed to start the daemon: {}", e),
@@ -78,7 +86,7 @@ pub fn daemon_restart() -> Result<(), anyhow::Error> {
 }
 
 pub fn daemon_stop() -> Result<(), anyhow::Error> {
-	let rt = tokio_runtime();
+	let rt = tokio_current();
 	rt.block_on(async {
 		match daemon_client().await {
 			Ok(client) => match client.terminate(current()).await {
@@ -99,9 +107,11 @@ pub async fn daemon_server() -> Result<(), anyhow::Error> {
 
 	let db = Arc::new(Mutex::new(Database::new()));
 	let rtm = Arc::new(Mutex::new(RuntimeManager::default()));
+	let proc = Arc::new(Mutex::new(ProcessMananger::default()));
 
 	let state = KabinaState {
 		database: db.clone(),
+		process: proc,
 		rtm,
 	};
 

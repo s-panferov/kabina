@@ -13,6 +13,7 @@ pub struct RuntimeChannel {
 	sender: Sender<RuntimeMessage>,
 }
 
+#[derive(Debug)]
 pub enum RuntimeMessage {
 	Schema(oneshot::Sender<Schema>),
 }

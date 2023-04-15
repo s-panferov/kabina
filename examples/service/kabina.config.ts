@@ -4,6 +4,6 @@ service({
   name: "PhotoFrame",
   runtime: {
     kind: 'binary',
-    executable: "frame"
+    executable: "true"
   }
 })
